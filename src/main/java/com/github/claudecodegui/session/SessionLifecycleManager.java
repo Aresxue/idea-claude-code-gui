@@ -7,6 +7,7 @@ import com.github.claudecodegui.handler.HandlerContext;
 import com.github.claudecodegui.handler.SettingsHandler;
 import com.github.claudecodegui.provider.claude.ClaudeSDKBridge;
 import com.github.claudecodegui.provider.codex.CodexSDKBridge;
+import com.github.claudecodegui.skill.SlashCommandRegistry;
 import com.github.claudecodegui.util.JsUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -100,6 +101,9 @@ public class SessionLifecycleManager {
             newSession.setSessionInfo(null, workingDirectory);
             LOG.info("New session created successfully, working directory: " + workingDirectory);
             host.getClaudeSDKBridge().prewarmDaemonAsync(workingDirectory);
+
+            // Push slash commands for the new session
+            fetchSlashCommandsOnStartup();
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 host.callJavaScript("updateStatus",
@@ -209,7 +213,8 @@ public class SessionLifecycleManager {
     }
 
     /**
-     * Fetch slash commands from the SDK.
+     * Fetch slash commands using local registry (no SDK/API call needed).
+     * Merges built-in commands with skill-derived commands per provider.
      */
     public void fetchSlashCommandsOnStartup() {
         ClaudeSession currentSession = host.getSession();
@@ -218,25 +223,27 @@ public class SessionLifecycleManager {
             cwd = host.getProject().getBasePath();
         }
 
-        LOG.info("Fetching slash commands from SDK, cwd=" + cwd);
+        // Determine current provider
+        String provider = "claude";
+        if (currentSession != null && currentSession.getProvider() != null) {
+            provider = currentSession.getProvider();
+        }
 
-        host.getClaudeSDKBridge().getSlashCommands(cwd).thenAccept(commands -> {
-            host.setFetchedSlashCommandsCount(commands.size());
-            host.setSlashCommandsFetched(true);
-            LOG.info("Slash commands fetched from SDK: " + commands.size() + " commands");
+        LOG.info("Fetching slash commands locally, provider=" + provider + ", cwd=" + cwd);
 
-            ApplicationManager.getApplication().invokeLater(() -> {
-                try {
-                    String commandsJson = new Gson().toJson(commands);
-                    LOG.debug("Calling updateSlashCommands with JSON length=" + commandsJson.length());
-                    host.callJavaScript("updateSlashCommands", JsUtils.escapeJs(commandsJson));
-                } catch (Exception e) {
-                    LOG.warn("Failed to send slash commands to frontend: " + e.getMessage(), e);
-                }
-            });
-        }).exceptionally(e -> {
-            LOG.warn("Failed to fetch slash commands from SDK: " + e.getMessage(), e);
-            return null;
+        var commands = SlashCommandRegistry.getCommands(provider, cwd);
+        String commandsJson = SlashCommandRegistry.toJson(commands);
+
+        host.setFetchedSlashCommandsCount(commands.size());
+        host.setSlashCommandsFetched(true);
+        LOG.info("Slash commands resolved locally: " + commands.size() + " commands");
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                host.callJavaScript("updateSlashCommands", JsUtils.escapeJs(commandsJson));
+            } catch (Exception e) {
+                LOG.warn("Failed to send slash commands to frontend: " + e.getMessage(), e);
+            }
         });
     }
 

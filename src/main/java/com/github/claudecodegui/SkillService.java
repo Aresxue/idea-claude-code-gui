@@ -7,12 +7,11 @@ import com.intellij.openapi.diagnostic.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import com.github.claudecodegui.skill.SkillFrontmatterParser;
 
 /**
  * Skills service.
@@ -35,10 +34,6 @@ public class SkillService {
     private static final String CONFIG_DIR_NAME = ".codemoss";
     private static final String SKILLS_DIR_NAME = "skills";
     private static final String GLOBAL_DIR_NAME = "global";
-
-    // Regex patterns for matching description in YAML frontmatter
-    private static final Pattern FRONTMATTER_PATTERN = Pattern.compile("^---\\s*\\n([\\s\\S]*?)\\n---");
-    private static final Pattern DESCRIPTION_PATTERN = Pattern.compile("description:\\s*(.+?)(?:\\n[a-z-]+:|$)", Pattern.DOTALL);
 
     // ==================== Active Directories (read by Claude) ====================
 
@@ -185,20 +180,31 @@ public class SkillService {
                 continue;
             }
 
-            String type = entry.isDirectory() ? "directory" : "file";
+            // Per Agent Skills spec: only directories are valid skills
+            if (!entry.isDirectory()) {
+                continue;
+            }
+
             // ID format includes an enabled/disabled marker to distinguish same-named skills
             String id = scope + "-" + entry.getName() + (enabled ? "" : "-disabled");
-            String description = extractDescription(entry.getAbsolutePath(), entry.isDirectory());
 
             JsonObject skill = new JsonObject();
             skill.addProperty("id", id);
-            skill.addProperty("name", entry.getName());
-            skill.addProperty("type", type);
+            skill.addProperty("type", "directory");
             skill.addProperty("scope", scope);
             skill.addProperty("path", entry.getAbsolutePath());
             skill.addProperty("enabled", enabled);
-            if (description != null) {
-                skill.addProperty("description", description);
+
+            // Parse frontmatter for name and description
+            SkillFrontmatterParser.SkillMetadata metadata =
+                    SkillFrontmatterParser.parse(entry.toPath());
+            if (metadata != null) {
+                skill.addProperty("name", metadata.name());
+                skill.addProperty("description", metadata.description());
+            } else {
+                // Keep skill in management list but mark as invalid
+                skill.addProperty("name", entry.getName());
+                skill.addProperty("warning", "invalid_frontmatter");
             }
 
             try {
@@ -217,46 +223,14 @@ public class SkillService {
     }
 
     /**
-     * Extracts the description from a skill.md file.
+     * Extracts the description from a skill directory's SKILL.md.
+     * Delegates to SkillFrontmatterParser for standard YAML parsing.
      */
     private static String extractDescription(String skillPath, boolean isDirectory) {
-        try {
-            String mdPath;
-            if (isDirectory) {
-                // If it's a directory, look for a skill.md or SKILL.md file
-                File skillMd = new File(skillPath, "skill.md");
-                if (!skillMd.exists()) {
-                    skillMd = new File(skillPath, "SKILL.md");
-                }
-                if (!skillMd.exists()) {
-                    return null;
-                }
-                mdPath = skillMd.getAbsolutePath();
-            } else {
-                // If it's a file, check if it's a .md file
-                if (!skillPath.toLowerCase().endsWith(".md")) {
-                    return null;
-                }
-                mdPath = skillPath;
-            }
-
-            String content = Files.readString(Path.of(mdPath), StandardCharsets.UTF_8);
-
-            // Extract description from the YAML frontmatter
-            Matcher frontmatterMatcher = FRONTMATTER_PATTERN.matcher(content);
-            if (frontmatterMatcher.find()) {
-                String frontmatter = frontmatterMatcher.group(1);
-                Matcher descMatcher = DESCRIPTION_PATTERN.matcher(frontmatter);
-                if (descMatcher.find()) {
-                    return descMatcher.group(1).trim();
-                }
-            }
-
-            return null;
-        } catch (IOException e) {
-            LOG.warn("[Skills] 提取 description 失败: " + e.getMessage());
+        if (!isDirectory) {
             return null;
         }
+        return SkillFrontmatterParser.extractDescription(Path.of(skillPath));
     }
 
     /**

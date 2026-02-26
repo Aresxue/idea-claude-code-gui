@@ -7,6 +7,7 @@ import com.github.claudecodegui.ClaudeSession;
 import com.github.claudecodegui.session.ClaudeMessageHandler;
 import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.model.NodeDetectionResult;
+import com.github.claudecodegui.skill.SlashCommandRegistry;
 import com.github.claudecodegui.util.FontConfigService;
 import com.github.claudecodegui.util.IgnoreRuleMatcher;
 import com.github.claudecodegui.util.SoundNotificationService;
@@ -459,10 +460,37 @@ public class SettingsHandler extends BaseMessageHandler {
                 context.getSession().setProvider(provider);
             }
 
+            // Refresh slash commands for the new provider
+            refreshSlashCommandsForProvider(provider);
+
             refreshContextBar();
         } catch (Exception e) {
             LOG.error("[SettingsHandler] Failed to set provider: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Refreshes slash commands after provider switch using local registry.
+     */
+    private void refreshSlashCommandsForProvider(String provider) {
+        String cwd = null;
+        if (context.getSession() != null) {
+            cwd = context.getSession().getCwd();
+        }
+        if (cwd == null) {
+            cwd = context.getProject().getBasePath();
+        }
+
+        var commands = SlashCommandRegistry.getCommands(provider, cwd);
+        String json = SlashCommandRegistry.toJson(commands);
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                callJavaScript("updateSlashCommands", escapeJs(json));
+            } catch (Exception e) {
+                LOG.warn("[SettingsHandler] Failed to refresh slash commands: " + e.getMessage());
+            }
+        });
     }
 
     private void refreshContextBar() {
