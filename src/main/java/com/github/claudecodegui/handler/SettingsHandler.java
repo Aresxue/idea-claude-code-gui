@@ -4,7 +4,7 @@ import com.github.claudecodegui.CodemossSettingsService;
 import com.github.claudecodegui.provider.claude.ClaudeHistoryReader;
 import com.github.claudecodegui.provider.codex.CodexHistoryReader;
 import com.github.claudecodegui.ClaudeSession;
-import com.github.claudecodegui.session.ClaudeMessageHandler;
+import com.github.claudecodegui.util.TokenUsageUtils;
 import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.model.NodeDetectionResult;
 import com.github.claudecodegui.skill.SlashCommandRegistry;
@@ -386,13 +386,13 @@ public class SettingsHandler extends BaseMessageHandler {
 
             // Extract the latest usage information from the current session
             List<ClaudeSession.Message> messages = session.getMessages();
-            JsonObject lastUsage = ClaudeMessageHandler.findLastUsageFromSessionMessages(messages);
+            JsonObject lastUsage = TokenUsageUtils.findLastUsageFromSessionMessages(messages);
             if (lastUsage == null) {
                 // No usage data available yet — send update with zero used tokens
                 sendUsageUpdate(0, newMaxTokens);
                 return;
             }
-            int usedTokens = ClaudeMessageHandler.extractUsedTokens(lastUsage, context.getCurrentProvider());
+            int usedTokens = TokenUsageUtils.extractUsedTokens(lastUsage, context.getCurrentProvider());
 
             // Send update
             sendUsageUpdate(usedTokens, newMaxTokens);

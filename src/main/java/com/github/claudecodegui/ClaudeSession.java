@@ -14,6 +14,7 @@ import com.github.claudecodegui.provider.codex.CodexSDKBridge;
 import com.github.claudecodegui.session.ClaudeMessageHandler;
 import com.github.claudecodegui.session.CodexMessageHandler;
 import com.github.claudecodegui.util.EditorFileUtils;
+import com.github.claudecodegui.util.TokenUsageUtils;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.concurrency.AppExecutorUtil;
@@ -1154,10 +1155,10 @@ public class ClaudeSession {
      */
     private void extractAndDisplayTokenUsage(List<JsonObject> serverMessages) {
         try {
-            JsonObject lastUsage = ClaudeMessageHandler.findLastUsageFromRawMessages(serverMessages);
+            JsonObject lastUsage = TokenUsageUtils.findLastUsageFromRawMessages(serverMessages);
             if (lastUsage == null) return;
 
-            int usedTokens = ClaudeMessageHandler.extractUsedTokens(lastUsage, state.getProvider());
+            int usedTokens = TokenUsageUtils.extractUsedTokens(lastUsage, state.getProvider());
             int maxTokens = SettingsHandler.getModelContextLimit(state.getModel());
             ClaudeNotifier.setTokenUsage(project, usedTokens, maxTokens);
             LOG.debug("Restored token usage from history: " + usedTokens + " / " + maxTokens);
