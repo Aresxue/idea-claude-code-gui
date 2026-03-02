@@ -214,9 +214,10 @@ public class DaemonBridge {
             LOG.debug("[DaemonBridge] Error closing stdin: " + e.getMessage());
         }
 
-        // Kill process if still alive
+        // Kill process if still alive and wait for termination
         if (daemonProcess != null && daemonProcess.isAlive()) {
             daemonProcess.destroyForcibly();
+            try { daemonProcess.waitFor(3, TimeUnit.SECONDS); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
 
         // Interrupt and join threads
@@ -537,6 +538,15 @@ public class DaemonBridge {
         if (!isRunning.compareAndSet(true, false)) return;
 
         LOG.warn("[DaemonBridge] Daemon process died");
+
+        // Forcefully kill the old process if still alive (e.g., heartbeat timeout)
+        Process oldProcess = daemonProcess;
+        if (oldProcess != null && oldProcess.isAlive()) {
+            LOG.info("[DaemonBridge] Forcefully killing unresponsive daemon process (PID: "
+                    + oldProcess.pid() + ")");
+            oldProcess.destroyForcibly();
+            try { oldProcess.waitFor(2, TimeUnit.SECONDS); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
 
         // Fail all pending requests
         for (Map.Entry<String, RequestHandler> entry : pendingRequests.entrySet()) {
