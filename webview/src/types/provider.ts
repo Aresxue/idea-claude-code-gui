@@ -26,7 +26,14 @@ export const MODEL_ID_PATTERN = /^[a-zA-Z0-9._\-/:]+$/;
 // ============ Validation Helpers ============
 
 /**
- * Validate whether a model ID format is valid
+ * Validate whether a model ID format is valid.
+ *
+ * NOTE: Model ID format is intentionally NOT restricted by regex.
+ * Third-party providers use diverse model ID formats that cannot be
+ * predicted (e.g., slashes, brackets, CJK characters). Only basic
+ * sanity checks (non-empty, length limit) are applied.
+ * Do NOT re-add MODEL_ID_PATTERN validation here.
+ *
  * @param id - Model ID
  * @returns Whether the ID is valid
  */

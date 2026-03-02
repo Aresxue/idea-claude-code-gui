@@ -169,6 +169,10 @@ public class SessionState {
     }
 
     public void setPermissionMode(String permissionMode) {
+        if (permissionMode != null && !VALID_PERMISSION_MODES.contains(permissionMode.trim())) {
+            // Reject unrecognized modes silently to prevent injection of arbitrary strings
+            return;
+        }
         this.permissionMode = permissionMode;
     }
 

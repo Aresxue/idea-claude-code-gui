@@ -17,6 +17,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Skills service.
@@ -39,6 +40,18 @@ public class SkillService {
     private static final String CONFIG_DIR_NAME = ".codemoss";
     private static final String SKILLS_DIR_NAME = "skills";
     private static final String GLOBAL_DIR_NAME = "global";
+
+    /** Safe skill name pattern: alphanumeric, dots, hyphens, underscores only. */
+    private static final Pattern SAFE_NAME = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9._-]*$");
+
+    /**
+     * Validate that a skill name is safe (no path traversal characters).
+     */
+    private static boolean isSafeSkillName(String name) {
+        if (name == null || name.isEmpty()) return false;
+        if (name.contains("..") || name.contains("/") || name.contains("\\") || name.contains("\0")) return false;
+        return SAFE_NAME.matcher(name).matches();
+    }
 
     // ==================== Active Directories (read by Claude) ====================
 
@@ -349,6 +362,12 @@ public class SkillService {
     public static JsonObject deleteSkill(String name, String scope, boolean enabled, String workspaceRoot) {
         JsonObject result = new JsonObject();
 
+        if (!isSafeSkillName(name)) {
+            result.addProperty("success", false);
+            result.addProperty("error", "Invalid skill name: " + name);
+            return result;
+        }
+
         // Select the appropriate directory based on the enabled state
         String dir;
         if (enabled) {
@@ -411,6 +430,12 @@ public class SkillService {
      */
     public static JsonObject enableSkill(String name, String scope, String workspaceRoot) {
         JsonObject result = new JsonObject();
+
+        if (!isSafeSkillName(name)) {
+            result.addProperty("success", false);
+            result.addProperty("error", "Invalid skill name: " + name);
+            return result;
+        }
 
         // Source directory: management directory (disabled skills)
         String sourceDir = "global".equals(scope) ? getGlobalManagementDir() : getLocalManagementDir(workspaceRoot);
@@ -492,6 +517,12 @@ public class SkillService {
      */
     public static JsonObject disableSkill(String name, String scope, String workspaceRoot) {
         JsonObject result = new JsonObject();
+
+        if (!isSafeSkillName(name)) {
+            result.addProperty("success", false);
+            result.addProperty("error", "Invalid skill name: " + name);
+            return result;
+        }
 
         // Source directory: active directory
         String sourceDir = "global".equals(scope) ? getGlobalSkillsDir() : getLocalSkillsDir(workspaceRoot);

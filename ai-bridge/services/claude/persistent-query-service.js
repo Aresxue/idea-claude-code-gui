@@ -251,8 +251,13 @@ function createPreToolUseHook(permissionModeState) {
   };
 }
 
+const VALID_PERMISSION_MODES = new Set(['default', 'plan', 'acceptEdits', 'bypassPermissions']);
+
 function normalizePermissionMode(permissionMode) {
-  return (!permissionMode || permissionMode === '') ? 'default' : permissionMode;
+  if (!permissionMode || permissionMode === '') return 'default';
+  if (VALID_PERMISSION_MODES.has(permissionMode)) return permissionMode;
+  console.warn('[DAEMON] Unknown permission mode, falling back to default:', permissionMode);
+  return 'default';
 }
 
 function buildRuntimeSignature(options, systemPromptAppend, streamingEnabled) {

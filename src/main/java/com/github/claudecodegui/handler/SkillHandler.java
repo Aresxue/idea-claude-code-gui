@@ -14,6 +14,8 @@ import com.intellij.util.concurrency.AppExecutorUtil;
 
 import javax.swing.*;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -176,8 +178,8 @@ public class SkillHandler extends BaseMessageHandler {
                     JsonObject result;
                     if (isCodex) {
                         String skillPath = json.has("skillPath") ? json.get("skillPath").getAsString() : null;
-                        // Validate skillPath: reject paths with traversal sequences
-                        if (skillPath != null && (skillPath.contains("..") || skillPath.contains("\0"))) {
+                        // Validate skillPath: reject traversal sequences, null bytes, and non-normalized paths
+                        if (skillPath != null && !isPathClean(skillPath)) {
                             result = new JsonObject();
                             result.addProperty("success", false);
                             result.addProperty("error", "Invalid skill path");
@@ -234,7 +236,7 @@ public class SkillHandler extends BaseMessageHandler {
                             result = new JsonObject();
                             result.addProperty("success", false);
                             result.addProperty("error", "skillPath is required for Codex skill toggle");
-                        } else if (skillPath.contains("..") || skillPath.contains("\0")) {
+                        } else if (!isPathClean(skillPath)) {
                             result = new JsonObject();
                             result.addProperty("success", false);
                             result.addProperty("error", "Invalid skill path");
@@ -271,12 +273,73 @@ public class SkillHandler extends BaseMessageHandler {
     }
 
     /**
+     * Check if a path is free of traversal sequences and normalizes to itself.
+     * This is a defense-in-depth check; individual service methods perform their own validation.
+     */
+    private static boolean isPathClean(String path) {
+        if (path == null || path.isEmpty()) return false;
+        if (path.contains("\0")) return false;
+        try {
+            Path original = Paths.get(path).toAbsolutePath();
+            Path normalized = original.normalize();
+            return original.toString().equals(normalized.toString());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if a path is inside any legitimate skills directory.
+     */
+    private boolean isInsideSkillsDirectory(String path) {
+        try {
+            Path normalized = Paths.get(path).toAbsolutePath().normalize();
+            String userHome = com.github.claudecodegui.util.PlatformUtils.getHomeDirectory();
+            String projectBase = context.getProject().getBasePath();
+
+            // Claude skills directories
+            List<Path> validBases = new ArrayList<>();
+            validBases.add(Paths.get(userHome, ".claude", "skills"));
+            validBases.add(Paths.get(userHome, ".claude", "commands"));
+            validBases.add(Paths.get(userHome, ".codemoss", "skills"));
+            // Codex skills directories
+            validBases.add(Paths.get(userHome, ".agents", "skills"));
+            validBases.add(Paths.get(userHome, ".codex", "skills"));
+
+            if (projectBase != null) {
+                validBases.add(Paths.get(projectBase, ".claude", "skills"));
+                validBases.add(Paths.get(projectBase, ".claude", "commands"));
+                validBases.add(Paths.get(projectBase, ".agents", "skills"));
+            }
+
+            for (Path base : validBases) {
+                if (normalized.startsWith(base.toAbsolutePath().normalize())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Open a skill in the editor.
      */
     private void handleOpenSkill(String content) {
         try {
             JsonObject json = GSON.fromJson(content, JsonObject.class);
             String skillPath = json.get("path").getAsString();
+
+            // Validate path: reject traversal sequences, null bytes, and paths outside skills directories
+            if (skillPath.contains("..") || skillPath.contains("\0")) {
+                LOG.warn("[SkillHandler] Rejected open request with suspicious path: " + skillPath);
+                return;
+            }
+            if (!isInsideSkillsDirectory(skillPath)) {
+                LOG.warn("[SkillHandler] Rejected open request for path outside skills directories");
+                return;
+            }
 
             File skillFile = new File(skillPath);
             String targetPath = skillPath;

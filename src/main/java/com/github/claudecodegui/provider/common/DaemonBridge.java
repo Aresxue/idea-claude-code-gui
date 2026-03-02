@@ -223,11 +223,11 @@ public class DaemonBridge {
         // Interrupt and join threads
         if (readerThread != null) {
             readerThread.interrupt();
-            try { readerThread.join(2000); } catch (InterruptedException ignored) {}
+            try { readerThread.join(2000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
         if (heartbeatThread != null) {
             heartbeatThread.interrupt();
-            try { heartbeatThread.join(2000); } catch (InterruptedException ignored) {}
+            try { heartbeatThread.join(2000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
 
         LOG.info("[DaemonBridge] Daemon stopped");
