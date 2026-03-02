@@ -21,6 +21,15 @@
   color: var(--text-primary);
 }
 
+/* Auto mode (bypassPermissions) - bright orange for high-permission warning */
+.selector-button.mode-auto-active {
+  color: #FF8C00;
+}
+
+.selector-button.mode-auto-active:hover {
+  color: #FFA033;
+}
+
 .selector-button .codicon {
   font-size: 14px;
 }
