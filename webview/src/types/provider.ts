@@ -236,4 +236,28 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
       ANTHROPIC_DEFAULT_OPUS_MODEL: 'mimo-v2-flash',
     },
   },
+  {
+    id: 'qwen',
+    nameKey: 'settings.provider.presets.qwen',
+    env: {
+      ANTHROPIC_BASE_URL: 'https://dashscope.aliyuncs.com/apps/anthropic',
+      ANTHROPIC_AUTH_TOKEN: '',
+      ANTHROPIC_MODEL: 'qwen3-max',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'qwen3-max',
+      ANTHROPIC_DEFAULT_SONNET_MODEL: 'qwen3-max',
+      ANTHROPIC_DEFAULT_OPUS_MODEL: 'qwen3-max',
+    },
+  },
+  {
+    id: 'openrouter',
+    nameKey: 'settings.provider.presets.openrouter',
+    env: {
+      ANTHROPIC_BASE_URL: 'https://openrouter.ai/api',
+      ANTHROPIC_AUTH_TOKEN: '',
+      ANTHROPIC_MODEL: 'anthropic/claude-sonnet-4.5',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'anthropic/claude-haiku-4.5',
+      ANTHROPIC_DEFAULT_SONNET_MODEL: 'anthropic/claude-sonnet-4.5',
+      ANTHROPIC_DEFAULT_OPUS_MODEL: 'anthropic/claude-opus-4.5',
+    },
+  },
 ];

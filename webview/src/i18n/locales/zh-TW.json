@@ -412,7 +412,9 @@
         "kimi": "Kimi K2",
         "deepseek": "DeepSeek",
         "minimax": "MiniMax",
-        "xiaomi": "Xiaomi MiMo"
+        "xiaomi": "Xiaomi MiMo",
+        "qwen": "阿里千問",
+        "openrouter": "OpenRouter"
       }
     },
     "comingSoon": "功能即將推出...",
