@@ -193,12 +193,6 @@ public class CodexSkillService {
             if (!entry.isDirectory() || entry.getName().startsWith(".")) {
                 continue;
             }
-            // Skip symbolic links to prevent information leakage
-            if (Files.isSymbolicLink(entry.toPath())) {
-                LOG.info("[CodexSkills] Skipping symbolic link during scan: " + entry.getName());
-                continue;
-            }
-
             // Use normalized path in id to prevent collisions when same-named skills
             // exist in different scan directories (child vs parent)
             String normalizedEntryPath = normalizePath(entry.getAbsolutePath());
