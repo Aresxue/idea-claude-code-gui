@@ -176,7 +176,14 @@ public class SkillHandler extends BaseMessageHandler {
                     JsonObject result;
                     if (isCodex) {
                         String skillPath = json.has("skillPath") ? json.get("skillPath").getAsString() : null;
-                        result = CodexSkillService.deleteSkill(skillName, scope, skillPath, workspaceRoot);
+                        // Validate skillPath: reject paths with traversal sequences
+                        if (skillPath != null && (skillPath.contains("..") || skillPath.contains("\0"))) {
+                            result = new JsonObject();
+                            result.addProperty("success", false);
+                            result.addProperty("error", "Invalid skill path");
+                        } else {
+                            result = CodexSkillService.deleteSkill(skillName, scope, skillPath, workspaceRoot);
+                        }
                     } else {
                         result = SkillService.deleteSkill(skillName, scope, enabled, workspaceRoot);
                     }
@@ -227,6 +234,10 @@ public class SkillHandler extends BaseMessageHandler {
                             result = new JsonObject();
                             result.addProperty("success", false);
                             result.addProperty("error", "skillPath is required for Codex skill toggle");
+                        } else if (skillPath.contains("..") || skillPath.contains("\0")) {
+                            result = new JsonObject();
+                            result.addProperty("success", false);
+                            result.addProperty("error", "Invalid skill path");
                         } else {
                             result = CodexSkillService.toggleSkill(skillPath, currentEnabled, workspaceRoot);
                         }

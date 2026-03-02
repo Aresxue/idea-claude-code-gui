@@ -1,5 +1,6 @@
 import type { CommandItem, DropdownItemData } from '../types';
 import { debugLog, debugWarn } from '../../../utils/debug.js';
+import i18n from '../../../i18n/config';
 
 // ============================================================================
 // State Management
@@ -10,7 +11,10 @@ interface DollarCommandItem {
   description?: string;
 }
 
+type LoadingState = 'idle' | 'loading' | 'success' | 'failed';
+
 let cachedCommands: CommandItem[] = [];
+let loadingState: LoadingState = 'idle';
 let callbackRegistered = false;
 
 // ============================================================================
@@ -22,6 +26,7 @@ let callbackRegistered = false;
  */
 export function resetDollarCommandsState() {
   cachedCommands = [];
+  loadingState = 'idle';
   callbackRegistered = false;
   // Clear the window callback to prevent handler chain growth on repeated provider switches
   if (typeof window !== 'undefined') {
@@ -37,12 +42,15 @@ export function setupDollarCommandsCallback() {
   if (typeof window === 'undefined') return;
   if (callbackRegistered && window.updateDollarCommands) return;
 
+  loadingState = 'loading';
+
   const handler = (json: string) => {
     debugLog('[DollarCommand] Received data from backend, length=' + json.length);
     try {
       const parsed: DollarCommandItem[] = JSON.parse(json);
       if (!Array.isArray(parsed)) {
         debugWarn('[DollarCommand] Invalid payload (not array)');
+        loadingState = 'failed';
         return;
       }
 
@@ -61,8 +69,10 @@ export function setupDollarCommandsCallback() {
           category: 'skill',
         }));
 
+      loadingState = 'success';
       debugLog('[DollarCommand] Loaded ' + cachedCommands.length + ' commands');
     } catch (error) {
+      loadingState = 'failed';
       debugWarn('[DollarCommand] Failed to parse commands: ' + error);
     }
   };
@@ -100,14 +110,33 @@ export async function dollarCommandProvider(
 
   setupDollarCommandsCallback();
 
-  if (!query) return cachedCommands;
+  if (loadingState === 'success') {
+    if (!query) return cachedCommands;
 
-  const lowerQuery = query.toLowerCase();
-  return cachedCommands.filter(
-    cmd =>
-      cmd.label.toLowerCase().includes(lowerQuery) ||
-      cmd.description?.toLowerCase().includes(lowerQuery)
-  );
+    const lowerQuery = query.toLowerCase();
+    return cachedCommands.filter(
+      cmd =>
+        cmd.label.toLowerCase().includes(lowerQuery) ||
+        cmd.description?.toLowerCase().includes(lowerQuery)
+    );
+  }
+
+  if (loadingState === 'failed') {
+    return [{
+      id: '__error__',
+      label: i18n.t('chat.loadingFailed'),
+      description: i18n.t('chat.pleaseCloseAndReopen'),
+      category: 'system',
+    }];
+  }
+
+  // loading or idle
+  return [{
+    id: '__loading__',
+    label: i18n.t('chat.loadingSlashCommands'),
+    description: i18n.t('chat.pleaseWait'),
+    category: 'system',
+  }];
 }
 
 /**

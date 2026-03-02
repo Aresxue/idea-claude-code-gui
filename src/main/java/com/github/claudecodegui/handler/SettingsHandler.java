@@ -508,7 +508,10 @@ public class SettingsHandler extends BaseMessageHandler {
                     LOG.warn("[SettingsHandler] Failed to refresh slash commands: " + e.getMessage());
                 }
             });
-        }, AppExecutorUtil.getAppExecutorService());
+        }, AppExecutorUtil.getAppExecutorService()).exceptionally(ex -> {
+            LOG.error("[SettingsHandler] Failed to refresh slash commands asynchronously: " + ex.getMessage(), ex);
+            return null;
+        });
     }
 
     private void refreshContextBar() {

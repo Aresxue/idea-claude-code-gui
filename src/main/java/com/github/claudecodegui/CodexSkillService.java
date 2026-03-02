@@ -193,6 +193,11 @@ public class CodexSkillService {
             if (!entry.isDirectory() || entry.getName().startsWith(".")) {
                 continue;
             }
+            // Skip symbolic links to prevent information leakage
+            if (Files.isSymbolicLink(entry.toPath())) {
+                LOG.info("[CodexSkills] Skipping symbolic link during scan: " + entry.getName());
+                continue;
+            }
 
             // Use normalized path in id to prevent collisions when same-named skills
             // exist in different scan directories (child vs parent)
@@ -355,6 +360,15 @@ public class CodexSkillService {
         if (skillPath == null || skillPath.isEmpty()) {
             result.addProperty("success", false);
             result.addProperty("error", "Skill path is required for toggle operation");
+            return result;
+        }
+
+        // Validate skillPath: must point to an existing SKILL.md or skill.md file
+        Path skillFilePath = Paths.get(skillPath).toAbsolutePath().normalize();
+        String skillFileName = skillFilePath.getFileName().toString();
+        if (!"SKILL.md".equals(skillFileName) && !"skill.md".equals(skillFileName)) {
+            result.addProperty("success", false);
+            result.addProperty("error", "Skill path must point to a SKILL.md file");
             return result;
         }
 
@@ -525,10 +539,19 @@ public class CodexSkillService {
         // Determine the skill directory from skillPath (parent of SKILL.md)
         File skillDir;
         if (skillPath != null && !skillPath.isEmpty()) {
-            File parentDir = new File(skillPath).getParentFile();
-            if (parentDir == null) {
+            // Validate skillPath: must end with SKILL.md or skill.md
+            Path normalizedSkillPath = Paths.get(skillPath).toAbsolutePath().normalize();
+            String fileName = normalizedSkillPath.getFileName().toString();
+            if (!"SKILL.md".equals(fileName) && !"skill.md".equals(fileName)) {
                 result.addProperty("success", false);
-                result.addProperty("error", "Cannot determine parent directory of skill path");
+                result.addProperty("error", "Skill path must point to a SKILL.md file");
+                return result;
+            }
+            File parentDir = normalizedSkillPath.getParent().toFile();
+            // Verify parent directory name matches skill name for consistency
+            if (name != null && !name.isEmpty() && !parentDir.getName().equals(name)) {
+                result.addProperty("success", false);
+                result.addProperty("error", "Skill path does not match skill name");
                 return result;
             }
             skillDir = parentDir;

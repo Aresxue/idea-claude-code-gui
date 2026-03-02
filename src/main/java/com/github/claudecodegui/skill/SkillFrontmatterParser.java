@@ -133,7 +133,10 @@ public final class SkillFrontmatterParser {
         // Step 3: Parse YAML
         Map<String, Object> yamlMap;
         try {
-            LoadSettings settings = LoadSettings.builder().build();
+            LoadSettings settings = LoadSettings.builder()
+                    .setMaxAliasesForCollections(10)
+                    .setCodePointLimit(8192)
+                    .build();
             Load load = new Load(settings);
             Object parsed = load.loadFromString(yamlText);
             if (!(parsed instanceof Map)) {

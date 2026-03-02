@@ -202,7 +202,10 @@ public final class SlashCommandRegistry {
         }
 
         try {
-            LoadSettings settings = LoadSettings.builder().build();
+            LoadSettings settings = LoadSettings.builder()
+                    .setMaxAliasesForCollections(10)
+                    .setCodePointLimit(8192)
+                    .build();
             Load load = new Load(settings);
             Object parsed = load.loadFromString(yamlText);
 

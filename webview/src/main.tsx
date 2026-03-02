@@ -307,9 +307,7 @@ if (typeof window !== 'undefined' && !window.updateSlashCommands) {
 
 // Pre-register updateDollarCommands to handle backend calls that arrive before React initializes
 if (typeof window !== 'undefined' && !window.updateDollarCommands) {
-  console.log('[Main] Pre-registering updateDollarCommands placeholder');
   window.updateDollarCommands = (json: string) => {
-    console.log('[Main] Storing pending dollar commands, length=' + json.length);
     window.__pendingDollarCommands = json;
   };
 }
