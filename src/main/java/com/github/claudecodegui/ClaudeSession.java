@@ -13,6 +13,7 @@ import com.github.claudecodegui.provider.claude.ClaudeSDKBridge;
 import com.github.claudecodegui.provider.codex.CodexSDKBridge;
 import com.github.claudecodegui.session.ClaudeMessageHandler;
 import com.github.claudecodegui.session.CodexMessageHandler;
+import com.github.claudecodegui.session.SessionState;
 import com.github.claudecodegui.util.EditorFileUtils;
 import com.github.claudecodegui.util.TokenUsageUtils;
 import com.intellij.openapi.application.ReadAction;
@@ -952,8 +953,7 @@ public class ClaudeSession {
         if (mode == null) return null;
         String trimmed = mode.trim();
         if (trimmed.isEmpty()) return null;
-        if ("default".equals(trimmed) || "plan".equals(trimmed)
-            || "acceptEdits".equals(trimmed) || "bypassPermissions".equals(trimmed)) {
+        if (SessionState.isValidPermissionMode(trimmed)) {
             return trimmed;
         }
         LOG.warn("[ModeSync][Backend] Invalid requested permissionMode ignored: " + mode);

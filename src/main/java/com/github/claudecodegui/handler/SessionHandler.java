@@ -3,6 +3,7 @@ package com.github.claudecodegui.handler;
 import com.github.claudecodegui.ClaudeSession;
 import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.notifications.ClaudeNotifier;
+import com.github.claudecodegui.session.SessionState;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -124,7 +125,7 @@ public class SessionHandler extends BaseMessageHandler {
             // Extract requested permission mode from payload (optional, backward compatible)
             if (payload != null && payload.has("permissionMode") && !payload.get("permissionMode").isJsonNull()) {
                 String mode = payload.get("permissionMode").getAsString();
-                if (isValidPermissionMode(mode)) {
+                if (SessionState.isValidPermissionMode(mode)) {
                     requestedPermissionMode = mode;
                 } else {
                     LOG.warn("[SessionHandler] Ignoring invalid permissionMode from payload: " + mode);
@@ -238,7 +239,7 @@ public class SessionHandler extends BaseMessageHandler {
 
             if (payload != null && payload.has("permissionMode") && !payload.get("permissionMode").isJsonNull()) {
                 String mode = payload.get("permissionMode").getAsString();
-                if (isValidPermissionMode(mode)) {
+                if (SessionState.isValidPermissionMode(mode)) {
                     requestedPermissionMode = mode;
                 } else {
                     LOG.warn("[SessionHandler] Ignoring invalid permissionMode from attachment payload: " + mode);
@@ -341,13 +342,6 @@ public class SessionHandler extends BaseMessageHandler {
         context.getSession().restart().thenRun(() -> {
             ApplicationManager.getApplication().invokeLater(() -> {});
         });
-    }
-
-    private boolean isValidPermissionMode(String mode) {
-        return "default".equals(mode)
-            || "plan".equals(mode)
-            || "acceptEdits".equals(mode)
-            || "bypassPermissions".equals(mode);
     }
 
     /**

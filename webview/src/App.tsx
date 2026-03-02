@@ -780,7 +780,7 @@ const App = () => {
     const effectivePermissionMode: PermissionMode = currentProvider === 'codex'
       ? 'bypassPermissions'
       : requestedPermissionMode;
-    console.info('[ModeSync][Frontend] send request mode', {
+    console.debug('[ModeSync][Frontend] send request mode', {
       provider: currentProvider,
       requestedMode: requestedPermissionMode,
       effectiveMode: effectivePermissionMode,

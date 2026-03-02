@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { TFunction } from 'i18next';
 import type { MutableRefObject, RefObject } from 'react';
 import type { ClaudeMessage, ClaudeRawMessage, HistoryData } from '../types';
+import { isValidPermissionMode } from '../components/ChatInputBox/types';
 import type { PermissionMode, SelectedAgent } from '../components/ChatInputBox/types';
 import type { ProviderConfig } from '../types/provider';
 import type { PermissionRequest } from '../components/PermissionDialog';
@@ -867,7 +868,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
         setPermissionMode((prev) => (prev === 'bypassPermissions' ? prev : 'bypassPermissions'));
         return;
       }
-      if (mode === 'default' || mode === 'plan' || mode === 'acceptEdits' || mode === 'bypassPermissions') {
+      if (isValidPermissionMode(mode)) {
         setPermissionMode((prev) => (prev === mode ? prev : mode));
         setClaudePermissionMode((prev) => (prev === mode ? prev : mode));
       }
