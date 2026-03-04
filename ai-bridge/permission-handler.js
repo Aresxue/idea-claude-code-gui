@@ -9,6 +9,7 @@ import { writeFileSync, readFileSync, existsSync, unlinkSync, readdirSync } from
 import { join, basename, resolve, sep } from 'path';
 import { tmpdir } from 'os';
 import { getRealHomeDir } from './utils/path-utils.js';
+import { checkSettingsPermission } from './utils/settings-permission.js';
 
 // ========== Debug logging helpers ==========
 function debugLog(tag, message, data = null) {
@@ -561,6 +562,23 @@ export async function canUseTool(toolName, input, options = {}) {
   const autoAllowedTools = ['Read', 'Glob', 'Grep'];
   if (autoAllowedTools.includes(toolName)) {
     debugLog('AUTO_ALLOW', `Auto-allowing read-only tool: ${toolName}`);
+    return {
+      behavior: 'allow',
+      updatedInput: input
+    };
+  }
+
+  // Check settings.json permission rules (deny > allow > fall through)
+  const settingsDecision = checkSettingsPermission(toolName, input);
+  if ('deny' === settingsDecision) {
+    debugLog('SETTINGS_DENY', `Tool ${toolName} denied by settings.json rule`, { input });
+    return {
+      behavior: 'deny',
+      message: `Tool ${toolName} denied by settings.json permission rules`
+    };
+  }
+  if ('allow' === settingsDecision) {
+    debugLog('SETTINGS_ALLOW', `Tool ${toolName} allowed by settings.json rule`, { input });
     return {
       behavior: 'allow',
       updatedInput: input
