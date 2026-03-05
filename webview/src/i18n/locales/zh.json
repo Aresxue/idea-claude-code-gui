@@ -197,6 +197,12 @@
         "useDefault": "使用默认",
         "customSoundSaved": "自定义提示音已保存"
       },
+      "settingsPermission": {
+        "label": "自动适配 Claude Code 权限",
+        "enabled": "已开启",
+        "disabled": "已关闭",
+        "hint": "开启后，将自动读取 ~/.claude/settings.json 中的权限配置（allow/deny 规则）来控制工具调用权限。关闭时使用默认的交互式权限确认。"
+      },
       "userMsgColor": {
         "label": "用户消息颜色",
         "custom": "自定义",

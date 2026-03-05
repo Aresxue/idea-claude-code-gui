@@ -25,6 +25,39 @@ function getProjectRoot() {
   return process.env.IDEA_PROJECT_PATH || process.env.PROJECT_PATH || null;
 }
 
+// ========== Toggle cache (reads ~/.codemoss/config.json) ==========
+
+let toggleCache = null;
+
+function isSettingsPermissionEnabled() {
+  try {
+    const configPath = join(getRealHomeDir(), '.codemoss', 'config.json');
+    const currentMtime = getFileMtime(configPath);
+    if (null != toggleCache && toggleCache.fileMtime === currentMtime) {
+      return toggleCache.enabled;
+    }
+    if (false === existsSync(configPath)) {
+      toggleCache = { enabled: false, fileMtime: 0 };
+      return false;
+    }
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    const sp = config.settingsPermission;
+    let enabled = false;
+    if (null != sp) {
+      const projectPath = process.env.IDEA_PROJECT_PATH || process.env.PROJECT_PATH;
+      if (null != projectPath && undefined !== sp[projectPath]) {
+        enabled = sp[projectPath] === true;
+      } else if (undefined !== sp.default) {
+        enabled = sp.default === true;
+      }
+    }
+    toggleCache = { enabled, fileMtime: currentMtime };
+    return enabled;
+  } catch {
+    return false;
+  }
+}
+
 // ========== Mtime-driven cache ==========
 
 // Cache structure: { rules: { allow: ParsedRule[], deny: ParsedRule[] }, fileMtime: number }
@@ -394,6 +427,10 @@ function matchRule(rule, toolName, input) {
  */
 export function checkSettingsPermission(toolName, input) {
   try {
+    if (false === isSettingsPermissionEnabled()) {
+      return 'none';
+    }
+
     const globalRules = getGlobalRules();
     const projectRules = getProjectRules();
 

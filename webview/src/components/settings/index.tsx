@@ -284,6 +284,9 @@ const SettingsView = ({
   const [localAutoOpenFileEnabled, setLocalAutoOpenFileEnabled] = useState<boolean>(true);
   const autoOpenFileEnabled = autoOpenFileEnabledProp ?? localAutoOpenFileEnabled;
 
+  // Settings permission configuration
+  const [settingsPermissionEnabled, setSettingsPermissionEnabled] = useState<boolean>(false);
+
   // Commit AI prompt configuration
   const [commitPrompt, setCommitPrompt] = useState('');
   const [savingCommitPrompt, setSavingCommitPrompt] = useState(false);
@@ -389,6 +392,7 @@ const SettingsView = ({
     setSoundNotificationEnabled,
     setSelectedSound,
     setCustomSoundPath,
+    setSettingsPermissionEnabled,
   });
 
   // Listen for window resize events
@@ -550,6 +554,13 @@ const SettingsView = ({
       const payload = { autoOpenFileEnabled: enabled };
       sendToJava(`set_auto_open_file_enabled:${JSON.stringify(payload)}`);
     }
+  };
+
+  // Settings permission toggle change handler
+  const handleSettingsPermissionEnabledChange = (enabled: boolean) => {
+    setSettingsPermissionEnabled(enabled);
+    const payload = { settingsPermissionEnabled: enabled };
+    sendToJava(`set_settings_permission_enabled:${JSON.stringify(payload)}`);
   };
 
   // Sound notification toggle change handler
@@ -737,6 +748,8 @@ const SettingsView = ({
               onSaveCustomSoundPath={handleSaveCustomSoundPath}
               onTestSound={handleTestSound}
               onBrowseSound={handleBrowseSound}
+              settingsPermissionEnabled={settingsPermissionEnabled}
+              onSettingsPermissionEnabledChange={handleSettingsPermissionEnabledChange}
             />
           </div>
 

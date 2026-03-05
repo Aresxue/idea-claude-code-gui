@@ -54,6 +54,9 @@ interface BasicConfigSectionProps {
   // Sound notification configuration
   soundNotificationEnabled?: boolean;
   onSoundNotificationEnabledChange?: (enabled: boolean) => void;
+  // Settings permission configuration
+  settingsPermissionEnabled?: boolean;
+  onSettingsPermissionEnabledChange?: (enabled: boolean) => void;
   selectedSound?: string;
   onSelectedSoundChange?: (soundId: string) => void;
   customSoundPath?: string;
@@ -120,6 +123,8 @@ const BasicConfigSection = (props: BasicConfigSectionProps) => {
           onSaveCustomSoundPath={props.onSaveCustomSoundPath}
           onTestSound={props.onTestSound}
           onBrowseSound={props.onBrowseSound}
+          settingsPermissionEnabled={props.settingsPermissionEnabled}
+          onSettingsPermissionEnabledChange={props.onSettingsPermissionEnabledChange}
         />
       )}
 

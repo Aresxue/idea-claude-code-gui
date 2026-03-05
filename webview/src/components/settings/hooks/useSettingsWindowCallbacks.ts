@@ -39,6 +39,8 @@ export interface SettingsWindowCallbacksDeps {
   setSoundNotificationEnabled?: (enabled: boolean) => void;
   setSelectedSound?: (soundId: string) => void;
   setCustomSoundPath?: (path: string) => void;
+  // Settings permission setter
+  setSettingsPermissionEnabled?: (enabled: boolean) => void;
 
   // Hook functions
   updateProviders: (providers: ProviderConfig[]) => void;
@@ -249,6 +251,18 @@ export function useSettingsWindowCallbacks(deps: SettingsWindowCallbacksDeps) {
       }
     };
 
+    // Settings permission config callback
+    window.updateSettingsPermissionEnabled = (jsonStr: string) => {
+      try {
+        const data = JSON.parse(jsonStr);
+        if (data.settingsPermissionEnabled !== undefined) {
+          d().setSettingsPermissionEnabled?.(data.settingsPermissionEnabled);
+        }
+      } catch (error) {
+        console.error('[SettingsView] Failed to parse settings permission config:', error);
+      }
+    };
+
     // Agent callbacks
     const previousUpdateAgents = window.updateAgents;
     window.updateAgents = (jsonStr: string) => {
@@ -380,6 +394,7 @@ export function useSettingsWindowCallbacks(deps: SettingsWindowCallbacksDeps) {
     sendToJava('get_streaming_enabled:');
     sendToJava('get_commit_prompt:');
     sendToJava('get_sound_notification_config:');
+    sendToJava('get_settings_permission_enabled:');
 
     return () => {
       d().cleanupAgentsTimeout();
@@ -404,6 +419,7 @@ export function useSettingsWindowCallbacks(deps: SettingsWindowCallbacksDeps) {
       }
       window.updateCommitPrompt = undefined;
       window.updateSoundNotificationConfig = undefined;
+      window.updateSettingsPermissionEnabled = undefined;
       window.updateAgents = previousUpdateAgents;
       window.agentOperationResult = undefined;
       window.agentImportPreviewResult = undefined;

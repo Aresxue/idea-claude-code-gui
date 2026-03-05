@@ -197,6 +197,12 @@
         "useDefault": "Use Default",
         "customSoundSaved": "Custom sound saved"
       },
+      "settingsPermission": {
+        "label": "Auto-adapt Claude Code Permissions",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "hint": "When enabled, automatically reads permission rules (allow/deny) from ~/.claude/settings.json to control tool invocation permissions. When disabled, uses the default interactive permission confirmation."
+      },
       "userMsgColor": {
         "label": "User Message Color",
         "custom": "Custom",

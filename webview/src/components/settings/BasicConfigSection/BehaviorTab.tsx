@@ -83,6 +83,8 @@ export interface BehaviorTabProps {
   onDiffExpandedByDefaultChange?: (enabled: boolean) => void;
   soundNotificationEnabled?: boolean;
   onSoundNotificationEnabledChange?: (enabled: boolean) => void;
+  settingsPermissionEnabled?: boolean;
+  onSettingsPermissionEnabledChange?: (enabled: boolean) => void;
   selectedSound?: string;
   onSelectedSoundChange?: (soundId: string) => void;
   customSoundPath?: string;
@@ -110,6 +112,8 @@ const BehaviorTab = ({
   onSaveCustomSoundPath = () => {},
   onTestSound = () => {},
   onBrowseSound = () => {},
+  settingsPermissionEnabled = false,
+  onSettingsPermissionEnabledChange = () => {},
 }: BehaviorTabProps) => {
   const { t } = useTranslation();
 
@@ -312,6 +316,32 @@ const BehaviorTab = ({
             )}
           </div>
         )}
+      </div>
+
+      {/* Settings permission configuration */}
+      <div className={styles.streamingSection}>
+        <div className={styles.fieldHeader}>
+          <span className="codicon codicon-shield" />
+          <span className={styles.fieldLabel}>{t('settings.basic.settingsPermission.label')}</span>
+        </div>
+        <label className={styles.toggleWrapper}>
+          <input
+            type="checkbox"
+            className={styles.toggleInput}
+            checked={settingsPermissionEnabled}
+            onChange={(e) => onSettingsPermissionEnabledChange(e.target.checked)}
+          />
+          <span className={styles.toggleSlider} />
+          <span className={styles.toggleLabel}>
+            {settingsPermissionEnabled
+              ? t('settings.basic.settingsPermission.enabled')
+              : t('settings.basic.settingsPermission.disabled')}
+          </span>
+        </label>
+        <small className={styles.formHint}>
+          <span className="codicon codicon-info" />
+          <span>{t('settings.basic.settingsPermission.hint')}</span>
+        </small>
       </div>
     </div>
   );

@@ -231,6 +231,11 @@ interface Window {
   updateAutoOpenFileEnabled?: (json: string) => void;
 
   /**
+   * Update settings permission enabled setting
+   */
+  updateSettingsPermissionEnabled?: (json: string) => void;
+
+  /**
    * Update commit AI prompt configuration
    */
   updateCommitPrompt?: (json: string) => void;

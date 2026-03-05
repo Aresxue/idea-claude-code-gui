@@ -80,7 +80,10 @@ public class SettingsHandler extends BaseMessageHandler {
         "set_selected_sound",
         "set_custom_sound_path",
         "test_sound",
-        "browse_sound_file"
+        "browse_sound_file",
+        // 权限适配配置
+        "get_settings_permission_enabled",
+        "set_settings_permission_enabled"
     };
 
     private static final Map<String, Integer> MODEL_CONTEXT_LIMITS = new HashMap<>();
@@ -223,6 +226,12 @@ public class SettingsHandler extends BaseMessageHandler {
                 return true;
             case "browse_sound_file":
                 handleBrowseSoundFile();
+                return true;
+            case "get_settings_permission_enabled":
+                handleGetSettingsPermissionEnabled();
+                return true;
+            case "set_settings_permission_enabled":
+                handleSetSettingsPermissionEnabled(content);
                 return true;
             default:
                 return false;
@@ -1087,6 +1096,81 @@ public class SettingsHandler extends BaseMessageHandler {
             LOG.error("[SettingsHandler] Failed to set auto open file enabled: " + e.getMessage(), e);
             ApplicationManager.getApplication().invokeLater(() -> {
                 callJavaScript("window.showError", escapeJs("保存自动打开文件配置失败: " + e.getMessage()));
+            });
+        }
+    }
+
+    /**
+     * Get settings permission configuration.
+     */
+    private void handleGetSettingsPermissionEnabled() {
+        try {
+            String projectPath = context.getProject().getBasePath();
+            if (null == projectPath) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    JsonObject response = new JsonObject();
+                    response.addProperty("settingsPermissionEnabled", false);
+                    callJavaScript("window.updateSettingsPermissionEnabled", escapeJs(new Gson().toJson(response)));
+                });
+                return;
+            }
+
+            com.github.claudecodegui.CodemossSettingsService settingsService =
+                new com.github.claudecodegui.CodemossSettingsService();
+            boolean settingsPermissionEnabled = settingsService.getSettingsPermissionEnabled(projectPath);
+
+            ApplicationManager.getApplication().invokeLater(() -> {
+                JsonObject response = new JsonObject();
+                response.addProperty("settingsPermissionEnabled", settingsPermissionEnabled);
+                callJavaScript("window.updateSettingsPermissionEnabled", escapeJs(new Gson().toJson(response)));
+            });
+        } catch (Exception e) {
+            LOG.error("[SettingsHandler] get settings permission enabled fail: " + e.getMessage(), e);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                JsonObject response = new JsonObject();
+                response.addProperty("settingsPermissionEnabled", false);
+                callJavaScript("window.updateSettingsPermissionEnabled", escapeJs(new Gson().toJson(response)));
+            });
+        }
+    }
+
+    /**
+     * Set settings permission configuration.
+     */
+    private void handleSetSettingsPermissionEnabled(String content) {
+        try {
+            String projectPath = context.getProject().getBasePath();
+            if (null == projectPath) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    callJavaScript("window.showError", escapeJs("无法获取项目路径"));
+                });
+                return;
+            }
+
+            Gson gson = new Gson();
+            JsonObject json = gson.fromJson(content, JsonObject.class);
+            boolean settingsPermissionEnabled = false;
+
+            if (null != json && json.has("settingsPermissionEnabled") && !json.get("settingsPermissionEnabled").isJsonNull()) {
+                settingsPermissionEnabled = json.get("settingsPermissionEnabled").getAsBoolean();
+            }
+
+            com.github.claudecodegui.CodemossSettingsService settingsService =
+                new com.github.claudecodegui.CodemossSettingsService();
+            settingsService.setSettingsPermissionEnabled(projectPath, settingsPermissionEnabled);
+
+            LOG.info("[SettingsHandler] set settings permission enabled: " + settingsPermissionEnabled);
+
+            final boolean finalEnabled = settingsPermissionEnabled;
+            ApplicationManager.getApplication().invokeLater(() -> {
+                JsonObject response = new JsonObject();
+                response.addProperty("settingsPermissionEnabled", finalEnabled);
+                callJavaScript("window.updateSettingsPermissionEnabled", escapeJs(gson.toJson(response)));
+            });
+        } catch (Exception e) {
+            LOG.error("[SettingsHandler] set settings permission enabled fail: " + e.getMessage(), e);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                callJavaScript("window.showError", escapeJs("保存权限适配配置失败: " + e.getMessage()));
             });
         }
     }

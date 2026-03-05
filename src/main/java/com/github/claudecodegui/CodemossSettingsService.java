@@ -453,6 +453,62 @@ public class CodemossSettingsService {
         LOG.info("[CodemossSettings] Set auto open file enabled to " + enabled + " for project: " + projectPath);
     }
 
+    // ==================== Settings Permission Config Management ====================
+
+    /**
+     * Get settings permission configuration.
+     * @param projectPath project path
+     * @return whether settings permission is enabled
+     */
+    public boolean getSettingsPermissionEnabled(String projectPath) throws IOException {
+        JsonObject config = readConfig();
+
+        if (!config.has("settingsPermission")) {
+            return false;
+        }
+
+        JsonObject settingsPermission = config.getAsJsonObject("settingsPermission");
+
+        // Check project-specific config first
+        if (null != projectPath && settingsPermission.has(projectPath)) {
+            return settingsPermission.get(projectPath).getAsBoolean();
+        }
+
+        // Fall back to global default if no project-specific config
+        if (settingsPermission.has("default")) {
+            return settingsPermission.get("default").getAsBoolean();
+        }
+
+        return false;
+    }
+
+    /**
+     * Set settings permission configuration.
+     * @param projectPath project path
+     * @param enabled whether to enable
+     */
+    public void setSettingsPermissionEnabled(String projectPath, boolean enabled) throws IOException {
+        JsonObject config = readConfig();
+
+        // Ensure settingsPermission object exists
+        JsonObject settingsPermission;
+        if (config.has("settingsPermission")) {
+            settingsPermission = config.getAsJsonObject("settingsPermission");
+        } else {
+            settingsPermission = new JsonObject();
+            config.add("settingsPermission", settingsPermission);
+        }
+
+        // Save project-specific config (also serves as default)
+        if (null != projectPath) {
+            settingsPermission.addProperty(projectPath, enabled);
+        }
+        settingsPermission.addProperty("default", enabled);
+
+        writeConfig(config);
+        LOG.info("[CodemossSettings] Set settings permission enabled to " + enabled + " for project: " + projectPath);
+    }
+
     // ==================== Provider Management ====================
 
     public List<JsonObject> getClaudeProviders() throws IOException {
