@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +69,7 @@ public final class SlashCommandRegistry {
     private static final Pattern SAFE_PLUGIN_ID = Pattern.compile("^[a-zA-Z0-9._@/\\-]+$");
     private static final int MAX_GLOB_PATTERN_LENGTH = 256;
     private static final Pattern DANGEROUS_GLOB = Pattern.compile("(\\*\\*/){5,}");
+    private static final int MAX_COMMAND_SCAN_DEPTH = 10;
 
     // Claude built-in commands (GUI-relevant only; CLI-only and frontend-local ones are excluded)
     public static final List<SlashCommand> CLAUDE_BUILTIN = List.of(
@@ -383,7 +385,8 @@ public final class SlashCommandRegistry {
             return List.of();
         }
 
-        List<String> paths = new ArrayList<>();
+        // Use LinkedHashSet to deduplicate while preserving insertion order
+        Set<String> paths = new LinkedHashSet<>();
 
         // Check typePath (singular), e.g. skillsPath, commandsPath
         JsonElement singlePath = manifest.get(type + "Path");
@@ -415,7 +418,7 @@ public final class SlashCommandRegistry {
             }
         }
 
-        return paths;
+        return new ArrayList<>(paths);
     }
 
     /**
@@ -779,8 +782,9 @@ public final class SlashCommandRegistry {
             );
             for (SlashCommand cmd : commands) {
                 // Apply plugin namespace prefix: /baseName → /pluginName:baseName
-                String prefixedName = "/" + pluginPath.pluginName()
-                        + ":" + cmd.name().substring(1);
+                String cmdName = cmd.name();
+                String baseName = cmdName.startsWith("/") ? cmdName.substring(1) : cmdName;
+                String prefixedName = "/" + pluginPath.pluginName() + ":" + baseName;
                 SlashCommand prefixed = new SlashCommand(
                         prefixedName, cmd.description(), cmd.source());
                 merged.put(prefixed.name(), prefixed);
@@ -865,7 +869,7 @@ public final class SlashCommandRegistry {
         }
 
         List<SlashCommand> commands = new ArrayList<>();
-        scanCommandsRecursive(baseDir.toFile(), baseDir, source, commands);
+        scanCommandsRecursive(baseDir.toFile(), baseDir, source, commands, 0);
         return commands;
     }
 
@@ -873,9 +877,15 @@ public final class SlashCommandRegistry {
      * Recursively scans a directory for command .md files.
      * If a directory contains SKILL.md, reads .md files there without further recursion.
      * Otherwise recurses into subdirectories and reads .md files at current level.
+     * Depth is bounded by MAX_COMMAND_SCAN_DEPTH to prevent stack overflow from
+     * deeply nested or symlink-looped directory structures.
      */
     private static void scanCommandsRecursive(
-            File dir, Path baseDir, String source, List<SlashCommand> commands) {
+            File dir, Path baseDir, String source, List<SlashCommand> commands, int depth) {
+        if (depth > MAX_COMMAND_SCAN_DEPTH) {
+            LOG.warn("Max command scan depth exceeded, skipping: " + dir);
+            return;
+        }
         File[] entries = dir.listFiles();
         if (entries == null) {
             return;
@@ -902,7 +912,7 @@ public final class SlashCommandRegistry {
                     commands.add(cmd);
                 }
             } else if (entry.isDirectory() && !hasSkillMd) {
-                scanCommandsRecursive(entry, baseDir, source, commands);
+                scanCommandsRecursive(entry, baseDir, source, commands, depth + 1);
             }
         }
     }
@@ -926,7 +936,7 @@ public final class SlashCommandRegistry {
             }
             sb.append(relative.getName(i));
         }
-        return sb.length() > 0 ? sb.toString() : null;
+        return !sb.isEmpty() ? sb.toString() : null;
     }
 
     /**
@@ -1247,7 +1257,13 @@ public final class SlashCommandRegistry {
 
         try {
             Path marketplaceDir = Paths.get(installLocation).toAbsolutePath().normalize();
-            Path pluginEntry = marketplaceDir.resolve("plugins").resolve(pluginName);
+            Path pluginsDir = marketplaceDir.resolve("plugins");
+            Path pluginEntry = pluginsDir.resolve(pluginName).toAbsolutePath().normalize();
+            // Verify resolved path stays within the plugins directory
+            if (!pluginEntry.startsWith(pluginsDir)) {
+                LOG.warn("Plugin path escaped marketplace plugins dir: " + pluginEntry);
+                return null;
+            }
             return resolvePluginManifestPath(pluginEntry);
         } catch (Exception e) {
             LOG.debug("Failed to resolve marketplace manifest for plugin: " + pluginName);
