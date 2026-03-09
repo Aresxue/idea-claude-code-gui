@@ -94,6 +94,10 @@ public class SessionLifecycleManager {
                                                           : CompletableFuture.completedFuture(null);
 
         interruptFuture.thenRun(() -> {
+            if (oldSession != null) {
+                host.getClaudeSDKBridge().resetPersistentRuntime(oldSession.getRuntimeSessionEpoch());
+                LOG.info("[Lifecycle] Requested daemon runtime reset for old epoch=" + oldSession.getRuntimeSessionEpoch());
+            }
             LOG.info("Old session interrupted, creating new session");
 
             ApplicationManager.getApplication().invokeLater(() -> {
@@ -117,8 +121,9 @@ public class SessionLifecycleManager {
 
             String workingDirectory = determineWorkingDirectory();
             newSession.setSessionInfo(null, workingDirectory);
-            LOG.info("New session created successfully, working directory: " + workingDirectory);
-            host.getClaudeSDKBridge().prewarmDaemonAsync(workingDirectory);
+            LOG.info("New session created successfully, working directory: " + workingDirectory
+                    + ", epoch=" + newSession.getRuntimeSessionEpoch());
+            host.getClaudeSDKBridge().prewarmDaemonAsync(workingDirectory, newSession.getRuntimeSessionEpoch());
 
             // Push slash commands for the new session
             fetchSlashCommandsOnStartup();
@@ -169,27 +174,47 @@ public class SessionLifecycleManager {
         host.callJavaScript("clearMessages");
         host.clearPendingPermissionRequests();
 
-        ClaudeSession newSession = new ClaudeSession(
-                host.getProject(), host.getClaudeSDKBridge(), host.getCodexSDKBridge());
-        newSession.setPermissionMode(previousPermissionMode);
-        newSession.setProvider(previousProvider);
-        newSession.setModel(previousModel);
-        LOG.info("Restored session state to loaded session: mode=" + previousPermissionMode
-                         + ", provider=" + previousProvider + ", model=" + previousModel);
+        CompletableFuture<Void> interruptFuture = oldSession != null
+                ? oldSession.interrupt()
+                : CompletableFuture.completedFuture(null);
 
-        host.setSession(newSession);
-        host.getHandlerContext().setSession(newSession);
-        host.setupSessionCallbacks();
+        interruptFuture.thenRun(() -> {
+            if (oldSession != null) {
+                host.getClaudeSDKBridge().resetPersistentRuntime(oldSession.getRuntimeSessionEpoch());
+                LOG.info("[Lifecycle] Requested daemon runtime reset before history load for old epoch="
+                        + oldSession.getRuntimeSessionEpoch());
+            }
 
-        String workingDir = (projectPath != null && new File(projectPath).exists())
+            ClaudeSession newSession = new ClaudeSession(
+                    host.getProject(), host.getClaudeSDKBridge(), host.getCodexSDKBridge());
+            newSession.setPermissionMode(previousPermissionMode);
+            newSession.setProvider(previousProvider);
+            newSession.setModel(previousModel);
+            LOG.info("Restored session state to loaded session: mode=" + previousPermissionMode
+                             + ", provider=" + previousProvider + ", model=" + previousModel);
+
+            host.setSession(newSession);
+            host.getHandlerContext().setSession(newSession);
+            host.setupSessionCallbacks();
+
+            String workingDir = (projectPath != null && new File(projectPath).exists())
                                     ? projectPath : determineWorkingDirectory();
-        newSession.setSessionInfo(sessionId, workingDir);
+            newSession.setSessionInfo(sessionId, workingDir);
 
-        newSession.loadFromServer().thenRun(() -> ApplicationManager.getApplication().invokeLater(() -> {
-            host.callJavaScript("historyLoadComplete");
-        })).exceptionally(ex -> {
+            newSession.loadFromServer().thenRun(() -> ApplicationManager.getApplication().invokeLater(() -> {
+                host.callJavaScript("historyLoadComplete");
+            })).exceptionally(ex -> {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    // Release transition guard so the frontend is not permanently stuck
+                    host.callJavaScript("historyLoadComplete");
+                    host.callJavaScript("addErrorMessage",
+                            JsUtils.escapeJs("Failed to load session: " + ex.getMessage()));
+                });
+                return null;
+            });
+        }).exceptionally(ex -> {
+            LOG.error("Failed to load history session: " + ex.getMessage(), ex);
             ApplicationManager.getApplication().invokeLater(() -> {
-                // Release transition guard so the frontend is not permanently stuck
                 host.callJavaScript("historyLoadComplete");
                 host.callJavaScript("addErrorMessage",
                         JsUtils.escapeJs("Failed to load session: " + ex.getMessage()));

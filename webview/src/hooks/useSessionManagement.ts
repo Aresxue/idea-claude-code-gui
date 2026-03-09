@@ -7,6 +7,9 @@ type ViewMode = 'chat' | 'history' | 'settings';
 
 type ToastType = 'info' | 'success' | 'warning' | 'error';
 
+const createSessionTransitionToken = () =>
+  `transition-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
 interface UseSessionManagementOptions {
   messages: ClaudeMessage[];
   loading: boolean;
@@ -79,6 +82,7 @@ export function useSessionManagement({
 
   const beginSessionTransition = useCallback((nextSessionId: string | null, nextTitle: string | null) => {
     window.__sessionTransitioning = true;
+    window.__sessionTransitionToken = createSessionTransitionToken();
     // Use the single cleanup entry point exposed by useWindowCallbacks.
     // This clears both React state AND internal streaming refs in one shot.
     if (typeof (window as any).__resetTransientUiState === 'function') {

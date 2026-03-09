@@ -966,12 +966,16 @@ public class ClaudeSession {
             LOG.warn("[Streaming] Failed to read streaming config: " + e.getMessage());
         }
 
-        final String previousSessionId = state.getSessionId();
+        final String runtimeSessionEpoch = state.getRuntimeSessionEpoch();
+        LOG.info("[Lifecycle] sendToClaude sessionId=" + (state.getSessionId() != null ? state.getSessionId() : "(new)")
+                + ", epoch=" + runtimeSessionEpoch
+                + ", cwd=" + state.getCwd());
 
         return claudeSDKBridge.sendMessage(
                         channelId,
                         input,
                         state.getSessionId(),
+                        runtimeSessionEpoch,
                         state.getCwd(),
                         attachments,
                         effectivePermissionMode,
@@ -979,6 +983,7 @@ public class ClaudeSession {
                         openedFilesJson,
                         agentPrompt,
                         streaming,
+                        false,
                         handler
                 ).thenApply(result -> null)
                 .thenCompose(v -> {
@@ -992,16 +997,6 @@ public class ClaudeSession {
                         }
                         updateUserMessageUuids();
                     });
-                }).whenComplete((unused, throwable) -> {
-                    if (throwable == null
-                            && (previousSessionId == null || previousSessionId.isEmpty())
-                            && state.getSessionId() != null && !state.getSessionId().isEmpty()) {
-                        // Refill anonymous warm runtime after first turn captures a session ID,
-                        // so the next new chat can also hit a pre-warmed path.
-                        // NOTE: Idle anonymous runtimes are cleaned up by persistent-query-service's
-                        // cleanupStaleAnonymousRuntimes() (ANONYMOUS_RUNTIME_MAX_IDLE_MS = 10min).
-                        claudeSDKBridge.prewarmDaemonAsync(state.getCwd());
-                    }
                 });
     }
 
@@ -1420,6 +1415,22 @@ public class ClaudeSession {
      */
     public String getProvider() {
         return state.getProvider();
+    }
+
+    /**
+     * Get the current runtime session epoch.
+     */
+    public String getRuntimeSessionEpoch() {
+        return state.getRuntimeSessionEpoch();
+    }
+
+    /**
+     * Rotate the runtime session epoch.
+     */
+    public String rotateRuntimeSessionEpoch() {
+        String epoch = state.rotateRuntimeSessionEpoch();
+        LOG.info("[Lifecycle] Rotated runtime session epoch to: " + epoch);
+        return epoch;
     }
 
     /**

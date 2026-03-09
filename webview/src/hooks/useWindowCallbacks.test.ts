@@ -90,6 +90,7 @@ describe('useWindowCallbacks integration', () => {
 
   beforeEach(() => {
     (window as any).__sessionTransitioning = false;
+    (window as any).__sessionTransitionToken = null;
     (window as any).__deniedToolIds = new Set();
     window.sendToJava = vi.fn();
   });
@@ -102,6 +103,7 @@ describe('useWindowCallbacks integration', () => {
 
     // Simulate: beginSessionTransition sets guard
     (window as any).__sessionTransitioning = true;
+    (window as any).__sessionTransitionToken = 'transition-1';
 
     // Simulate: Java calls historyLoadComplete on success
     act(() => {
@@ -109,6 +111,7 @@ describe('useWindowCallbacks integration', () => {
     });
 
     expect((window as any).__sessionTransitioning).toBe(false);
+    expect((window as any).__sessionTransitionToken).toBeNull();
   });
 
   // ===== setSessionId releases transition guard =====
@@ -118,12 +121,14 @@ describe('useWindowCallbacks integration', () => {
     renderHook(() => useWindowCallbacks(opts));
 
     (window as any).__sessionTransitioning = true;
+    (window as any).__sessionTransitionToken = 'transition-2';
 
     act(() => {
       (window as any).setSessionId('new-session-123');
     });
 
     expect((window as any).__sessionTransitioning).toBe(false);
+    expect((window as any).__sessionTransitionToken).toBeNull();
     expect(opts.setCurrentSessionId).toHaveBeenCalledWith('new-session-123');
   });
 
@@ -164,6 +169,22 @@ describe('useWindowCallbacks integration', () => {
 
     // setMessages SHOULD be called
     expect(opts.setMessages).toHaveBeenCalled();
+  });
+
+  it('updateStatus does not release an active transition token', () => {
+    const opts = createOptions();
+    renderHook(() => useWindowCallbacks(opts));
+
+    (window as any).__sessionTransitioning = true;
+    (window as any).__sessionTransitionToken = 'transition-status';
+
+    act(() => {
+      (window as any).updateStatus('warming runtime');
+    });
+
+    expect((window as any).__sessionTransitioning).toBe(true);
+    expect((window as any).__sessionTransitionToken).toBe('transition-status');
+    expect(opts.setStatus).toHaveBeenCalledWith('warming runtime');
   });
 
   // ===== addErrorMessage only shows toast (no status) =====

@@ -498,6 +498,14 @@ interface Window {
   __sessionTransitioning?: boolean;
 
   /**
+   * Session transition token (debug/logging only).
+   * Regenerated for each logical transition so callbacks can identify the active transition
+   * generation in logs. NOT used for guard logic — the boolean __sessionTransitioning flag
+   * is the actual guard.
+   */
+  __sessionTransitionToken?: string | null;
+
+  /**
    * Rewind result callback - returns the result of a rewind operation
    */
   onRewindResult?: (json: string) => void;

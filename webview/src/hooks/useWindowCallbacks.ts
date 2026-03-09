@@ -209,6 +209,13 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     }
   };
 
+  const releaseSessionTransition = () => {
+    if (window.__sessionTransitioning) {
+      window.__sessionTransitioning = false;
+    }
+    window.__sessionTransitionToken = null;
+  };
+
   // Expose as single entry point for session transition cleanup.
   // beginSessionTransition (useSessionManagement) calls this to synchronously
   // clear both React state AND internal refs in one shot.
@@ -476,10 +483,9 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     };
 
     window.updateStatus = (text) => {
-      // Backend sends updateStatus after creating a new session; clear the message update suppression flag
-      if (window.__sessionTransitioning) {
-        window.__sessionTransitioning = false;
-      }
+      // Do not release the transition guard from generic status updates.
+      // Only explicit session-bound callbacks such as historyLoadComplete/setSessionId
+      // are allowed to finish the active transition generation.
       setStatus(text);
       if (suppressNextStatusToastRef.current) {
         suppressNextStatusToastRef.current = false;
@@ -534,9 +540,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     // History load complete callback — triggers Markdown re-rendering
     // to fix the issue where Markdown doesn't render on first history load.
     window.historyLoadComplete = () => {
-      if (window.__sessionTransitioning) {
-        window.__sessionTransitioning = false;
-      }
+      releaseSessionTransition();
       // Trigger a component re-render by updating the last message reference (avoids O(n) shallow copy)
       setMessages((prev) => {
         if (prev.length === 0) return prev;
@@ -565,6 +569,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
 
     // ========== Streaming Callbacks ==========
     window.onStreamStart = () => {
+      if (window.__sessionTransitioning) return;
       streamingContentRef.current = '';
       isStreamingRef.current = true;
       useBackendStreamingRenderRef.current = false;
@@ -599,6 +604,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     };
 
     window.onContentDelta = (delta: string) => {
+      if (window.__sessionTransitioning) return;
       if (!isStreamingRef.current) return;
       streamingContentRef.current += delta;
       activeThinkingSegmentIndexRef.current = -1;
@@ -657,6 +663,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     };
 
     window.onThinkingDelta = (delta: string) => {
+      if (window.__sessionTransitioning) return;
       if (!isStreamingRef.current) return;
       activeTextSegmentIndexRef.current = -1;
 
@@ -714,6 +721,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     };
 
     window.onStreamEnd = () => {
+      if (window.__sessionTransitioning) return;
       // Notify backend about stream completion for tab status indicator
       sendBridgeEvent('tab_status_changed', JSON.stringify({ status: 'completed' }));
 
@@ -839,9 +847,7 @@ export function useWindowCallbacks(options: UseWindowCallbacksOptions): void {
     // ========== Session Callbacks ==========
     window.setSessionId = (sessionId: string) => {
       const oldId = currentSessionIdRef.current;
-      if (window.__sessionTransitioning) {
-        window.__sessionTransitioning = false;
-      }
+      releaseSessionTransition();
       setCurrentSessionId(sessionId);
 
       // B-011 + B-014: Persist custom title under the real SDK session ID.
