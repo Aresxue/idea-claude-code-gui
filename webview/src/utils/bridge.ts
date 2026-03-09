@@ -32,7 +32,7 @@ export const sendBridgeEvent = (event: string, content = '') => {
   return callBridge(`${event}:${content}`);
 };
 
-export const openFile = (filePath?: string) => {
+export const openFile = (filePath?: string, lineStart?: number, lineEnd?: number) => {
   if (!filePath) {
     return;
   }
@@ -40,7 +40,11 @@ export const openFile = (filePath?: string) => {
   if (!isValidPath(filePath)) {
     return;
   }
-  sendBridgeEvent('open_file', filePath);
+  let path = filePath;
+  if (lineStart !== undefined) {
+    path = lineEnd !== undefined ? `${filePath}:${lineStart}-${lineEnd}` : `${filePath}:${lineStart}`;
+  }
+  sendBridgeEvent('open_file', path);
 };
 
 export const openBrowser = (url?: string) => {

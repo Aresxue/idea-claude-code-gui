@@ -1022,7 +1022,8 @@
     "bashGroupAllCompleted": "全部完成",
     "bashGroupFailed": "失败",
     "promptLabel": "提示词",
-    "updatePlan": "更新计划"
+    "updatePlan": "更新计划",
+    "applyPatch": "应用补丁"
   },
   "todo": {
     "inProgress": "进行中 {{completed}}/{{total}} 个任务",
