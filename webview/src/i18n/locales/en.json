@@ -1039,7 +1039,9 @@
     "bashGroupCompleted": "completed",
     "bashGroupAllCompleted": "All Completed",
     "bashGroupFailed": "failed",
-    "promptLabel": "Prompt"
+    "promptLabel": "Prompt",
+    "updatePlan": "Update Plan",
+    "applyPatch": "Apply Patch"
   },
   "todo": {
     "inProgress": "In Progress {{completed}}/{{total}} tasks",

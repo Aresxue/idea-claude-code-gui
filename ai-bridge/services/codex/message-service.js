@@ -1317,8 +1317,13 @@ export async function sendMessage(
       // Extract actual command from shell wrapper
       const actualCmd = extractActualCommand(command);
 
+      // List/find commands -> glob
+      if (/^(ls|find|tree)\b/.test(actualCmd)) {
+        return 'glob';
+      }
+
       // File viewing commands -> read
-      if (/^(ls|pwd|find|cat|head|tail|file|stat|tree)\b/.test(actualCmd)) {
+      if (/^(pwd|cat|head|tail|file|stat)\b/.test(actualCmd)) {
         return 'read';
       }
 
@@ -1935,7 +1940,7 @@ export async function sendMessage(
         '\n⚠️ Codex completed tool executions but did not generate a text response.',
         'This may happen when:',
         '- The task was purely about gathering information',
-        '- Codex reached maxTurns limit (100 turns)',
+        '- Codex reached maxTurns limit (200 turns)',
         '- The query required only command execution',
         '\nPlease try:',
         '- Asking a more specific question',
