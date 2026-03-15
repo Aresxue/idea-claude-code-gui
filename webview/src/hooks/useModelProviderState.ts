@@ -46,7 +46,7 @@ export function useModelProviderState({ addToast, t }: UseModelProviderStateOpti
   // Send shortcut setting
   const [sendShortcut, setSendShortcut] = useState<'enter' | 'cmdEnter'>('enter');
   // Auto-open file setting
-  const [autoOpenFileEnabled, setAutoOpenFileEnabled] = useState(true);
+  const [autoOpenFileEnabled, setAutoOpenFileEnabled] = useState(false);
 
   // SDK installation status
   const [sdkStatus, setSdkStatus] = useState<Record<string, { installed?: boolean; status?: string }>>({});

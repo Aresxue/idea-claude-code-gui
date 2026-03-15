@@ -152,7 +152,7 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
   window.updateAutoOpenFileEnabled = (jsonStr: string) => {
     try {
       const data = JSON.parse(jsonStr);
-      setAutoOpenFileEnabled(data.autoOpenFileEnabled ?? true);
+      setAutoOpenFileEnabled(data.autoOpenFileEnabled ?? false);
     } catch (error) {
       console.error('[Frontend] Failed to parse auto open file enabled:', error);
     }

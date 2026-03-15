@@ -144,7 +144,7 @@ export function useSettingsBasicActions({
   const sendShortcut = sendShortcutProp ?? localSendShortcut;
 
   // Auto open file configuration - prefer props, fallback to local state
-  const [localAutoOpenFileEnabled, setLocalAutoOpenFileEnabled] = useState<boolean>(true);
+  const [localAutoOpenFileEnabled, setLocalAutoOpenFileEnabled] = useState<boolean>(false);
   const autoOpenFileEnabled = autoOpenFileEnabledProp ?? localAutoOpenFileEnabled;
 
   // Commit AI prompt configuration

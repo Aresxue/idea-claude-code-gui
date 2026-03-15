@@ -530,7 +530,7 @@ const SettingsView = ({
 
           {/* Community */}
           <div style={{ display: currentTab === 'community' ? 'block' : 'none' }}>
-            <CommunitySection />
+            <CommunitySection addToast={addToast} />
           </div>
         </div>
       </div>

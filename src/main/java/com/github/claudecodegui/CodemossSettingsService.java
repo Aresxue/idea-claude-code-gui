@@ -415,7 +415,7 @@ public class CodemossSettingsService {
 
         // Check for autoOpenFile config
         if (!config.has("autoOpenFile")) {
-            return true;
+            return false;
         }
 
         JsonObject autoOpenFile = config.getAsJsonObject("autoOpenFile");
@@ -430,7 +430,7 @@ public class CodemossSettingsService {
             return autoOpenFile.get("default").getAsBoolean();
         }
 
-        return true;
+        return false;
     }
 
     /**

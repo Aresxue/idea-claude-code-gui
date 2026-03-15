@@ -385,7 +385,7 @@ public class ClaudeSession {
             contextCollector.setPsiContextEnabled(state.isPsiContextEnabled());
 
             // Read "auto open file" setting to determine editor context collection
-            boolean autoOpenFileEnabled = true;
+            boolean autoOpenFileEnabled = false;
             try {
                 String projectPath = project.getBasePath();
                 if (projectPath != null) {

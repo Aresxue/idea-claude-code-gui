@@ -188,7 +188,7 @@ public class ProjectConfigHandler {
             if (projectPath == null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     JsonObject r = new JsonObject();
-                    r.addProperty("autoOpenFileEnabled", true);
+                    r.addProperty("autoOpenFileEnabled", false);
                     context.callJavaScript("window.updateAutoOpenFileEnabled", context.escapeJs(gson.toJson(r)));
                 });
                 return;
@@ -203,7 +203,7 @@ public class ProjectConfigHandler {
             LOG.error("[ProjectConfigHandler] Failed to get auto open file enabled: " + e.getMessage(), e);
             ApplicationManager.getApplication().invokeLater(() -> {
                 JsonObject r = new JsonObject();
-                r.addProperty("autoOpenFileEnabled", true);
+                r.addProperty("autoOpenFileEnabled", false);
                 context.callJavaScript("window.updateAutoOpenFileEnabled", context.escapeJs(gson.toJson(r)));
             });
         }
@@ -218,8 +218,8 @@ public class ProjectConfigHandler {
                 return;
             }
             JsonObject json = gson.fromJson(content, JsonObject.class);
-            boolean enabled = (json == null || !json.has("autoOpenFileEnabled") || json.get("autoOpenFileEnabled").isJsonNull())
-                || json.get("autoOpenFileEnabled").getAsBoolean();
+            boolean enabled = json != null && json.has("autoOpenFileEnabled") && !json.get("autoOpenFileEnabled").isJsonNull()
+                && json.get("autoOpenFileEnabled").getAsBoolean();
             new CodemossSettingsService().setAutoOpenFileEnabled(projectPath, enabled);
             LOG.info("[ProjectConfigHandler] Set auto open file enabled: " + enabled);
             final boolean finalVal = enabled;
