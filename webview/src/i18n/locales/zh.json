@@ -178,6 +178,17 @@
         "reset": "恢复默认",
         "hint": "自定义聊天区域的背景颜色，留空则跟随主题默认颜色"
       },
+      "diffTheme": {
+        "label": "Diff 主题",
+        "follow": "跟随界面",
+        "followDesc": "跟随当前聊天界面明暗主题",
+        "editor": "跟随编辑器",
+        "editorDesc": "尽量贴近 IDE 编辑器的 diff 氛围",
+        "light": "浅色",
+        "lightDesc": "更轻、更贴近当前设置页背景",
+        "softDark": "柔和深色",
+        "softDarkDesc": "保留代码感，但弱化纯黑对比"
+      },
       "soundNotification": {
         "label": "任务完成提示音",
         "enabled": "已开启",
@@ -1073,6 +1084,7 @@
     "editPrefix": "编辑: {{fileName}}",
     "lineRange": "第 {{start}}-{{end}} 行",
     "lineSingle": "第 {{line}} 行",
+    "editLocationsSuffix": "处",
     "filePath": "文件路径：",
     "unknownTool": "未知工具",
     "bashGroupBatchRun": "批量运行命令",

@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { ToolInput, ToolResultBlock } from '../../types';
 import { openFile, showDiff, refreshFile } from '../../utils/bridge';
 import { getFileIcon } from '../../utils/fileIcons';
-import { resolveToolTarget } from '../../utils/toolPresentation';
+import { resolveToolTarget, getToolLineInfo } from '../../utils/toolPresentation';
+import { normalizeToolInput } from '../../utils/toolInputNormalization';
 
 interface EditItem {
   filePath: string;
@@ -14,6 +15,8 @@ interface EditItem {
   newString: string;
   additions: number;
   deletions: number;
+  lineStart?: number;
+  lineEnd?: number;
   isCompleted: boolean;
   isError: boolean;
 }
@@ -86,7 +89,8 @@ function computeDiffStats(oldString: string, newString: string): { additions: nu
  * Parse item to EditItem
  */
 function parseEditItem(item: { name?: string; input?: ToolInput; result?: ToolResultBlock | null }): EditItem | null {
-  const { input, result } = item;
+  const result = item.result;
+  const input = item.input ? normalizeToolInput(item.name, item.input) : item.input;
   if (!input) return null;
 
   const target = resolveToolTarget({
@@ -109,6 +113,7 @@ function parseEditItem(item: { name?: string; input?: ToolInput; result?: ToolRe
     '';
 
   const { additions, deletions } = computeDiffStats(oldString, newString);
+  const lineInfo = getToolLineInfo(input, target, result);
   const isCompleted = result !== undefined && result !== null;
   const isError = isCompleted && result?.is_error === true;
 
@@ -121,6 +126,8 @@ function parseEditItem(item: { name?: string; input?: ToolInput; result?: ToolRe
     newString,
     additions,
     deletions,
+    lineStart: lineInfo.start,
+    lineEnd: lineInfo.end,
     isCompleted,
     isError,
   };
@@ -180,9 +187,9 @@ const EditToolGroupBlock = ({ items }: EditToolGroupBlockProps) => {
     ? MAX_VISIBLE_ITEMS * ITEM_HEIGHT
     : editItems.length * ITEM_HEIGHT;
 
-  const handleFileClick = (filePath: string, e: React.MouseEvent) => {
+  const handleFileClick = (item: EditItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    openFile(filePath);
+    openFile(item.openPath, item.lineStart, item.lineEnd);
   };
 
   const handleShowDiff = (item: EditItem, e: React.MouseEvent) => {
@@ -229,9 +236,9 @@ const EditToolGroupBlock = ({ items }: EditToolGroupBlockProps) => {
                 flexShrink: 0,
               }}
             >
-              {totalAdditions > 0 && <span style={{ color: '#89d185' }}>+{totalAdditions}</span>}
+              {totalAdditions > 0 && <span style={{ color: 'var(--diff-added-accent)' }}>+{totalAdditions}</span>}
               {totalAdditions > 0 && totalDeletions > 0 && <span style={{ margin: '0 4px' }} />}
-              {totalDeletions > 0 && <span style={{ color: '#ff6b6b' }}>-{totalDeletions}</span>}
+              {totalDeletions > 0 && <span style={{ color: 'var(--diff-deleted-accent)' }}>-{totalDeletions}</span>}
             </span>
           )}
         </div>
@@ -279,7 +286,7 @@ const EditToolGroupBlock = ({ items }: EditToolGroupBlockProps) => {
               />
               <span
                 className="clickable-file"
-                onClick={(e) => handleFileClick(item.openPath, e)}
+                onClick={(e) => handleFileClick(item, e)}
                 style={{
                   fontSize: '12px',
                   color: 'var(--text-primary)',
@@ -296,7 +303,7 @@ const EditToolGroupBlock = ({ items }: EditToolGroupBlockProps) => {
               </span>
 
               {/* Diff stats */}
-              {(item.additions > 0 || item.deletions > 0) && (
+              {(item.lineStart || item.additions > 0 || item.deletions > 0) && (
                 <span
                   style={{
                     fontSize: '11px',
@@ -304,11 +311,21 @@ const EditToolGroupBlock = ({ items }: EditToolGroupBlockProps) => {
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  {item.additions > 0 && <span style={{ color: '#89d185' }}>+{item.additions}</span>}
+                  {item.lineStart && (
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      {item.lineEnd && item.lineEnd !== item.lineStart
+                        ? t('tools.lineRange', { start: item.lineStart, end: item.lineEnd })
+                        : t('tools.lineSingle', { line: item.lineStart })}
+                    </span>
+                  )}
+                  {item.additions > 0 && <span style={{ color: 'var(--diff-added-accent)' }}>+{item.additions}</span>}
                   {item.additions > 0 && item.deletions > 0 && <span style={{ margin: '0 2px' }} />}
-                  {item.deletions > 0 && <span style={{ color: '#ff6b6b' }}>-{item.deletions}</span>}
+                  {item.deletions > 0 && <span style={{ color: 'var(--diff-deleted-accent)' }}>-{item.deletions}</span>}
                 </span>
               )}
 

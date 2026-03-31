@@ -1,5 +1,6 @@
 // hooks/useSettingsThemeSync.ts
 import { useState, useEffect } from 'react';
+import { applyDiffTheme, getStoredDiffTheme, type DiffThemeMode } from '../../../utils/diffTheme';
 
 // Extend window type for IDE theme injection
 declare global {
@@ -19,6 +20,8 @@ export interface UseSettingsThemeSyncReturn {
   setChatBgColor: (color: string) => void;
   userMsgColor: string;
   setUserMsgColor: (color: string) => void;
+  diffTheme: DiffThemeMode;
+  setDiffTheme: (theme: DiffThemeMode) => void;
 }
 
 export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
@@ -65,6 +68,9 @@ export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
     }
     return '';
   });
+
+  // Diff theme configuration
+  const [diffTheme, setDiffTheme] = useState<DiffThemeMode>(() => getStoredDiffTheme());
 
   // Theme switching handler (supports following IDE theme)
   useEffect(() => {
@@ -128,6 +134,11 @@ export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
     }
   }, [userMsgColor]);
 
+  // Diff theme handler
+  useEffect(() => {
+    applyDiffTheme(diffTheme, ideTheme);
+  }, [diffTheme, ideTheme, themePreference]);
+
   return {
     themePreference,
     setThemePreference,
@@ -139,5 +150,7 @@ export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
     setChatBgColor,
     userMsgColor,
     setUserMsgColor,
+    diffTheme,
+    setDiffTheme,
   };
 }

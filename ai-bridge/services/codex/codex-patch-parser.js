@@ -19,7 +19,28 @@ export function extractPatchFromExecCommand(cmd) {
 }
 
 /**
- * Extracts patch text from a response_item payload.
+ * Parses hunk header line numbers from unified diff headers.
+ */
+function parseHunkHeader(line) {
+  if (typeof line !== 'string') {
+    return null;
+  }
+
+  const match = line.match(/^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    oldStart: Number(match[1]),
+    oldCount: match[2] ? Number(match[2]) : 1,
+    newStart: Number(match[3]),
+    newCount: match[4] ? Number(match[4]) : 1,
+  };
+}
+
+/**
+ * Extracts apply_patch text from a response_item payload.
  * Supports function_call(exec_command/apply_patch) and custom_tool_call(apply_patch).
  */
 export function extractPatchFromResponseItemPayload(payload) {
@@ -83,6 +104,7 @@ export function parseApplyPatchToOperations(patchText) {
 
   let currentPath = null;
   let currentKind = null; // add | update | delete
+  let currentHunkHeader = null;
   let oldLines = [];
   let newLines = [];
   let addFileLines = [];
@@ -92,12 +114,27 @@ export function parseApplyPatchToOperations(patchText) {
     const oldString = oldLines.join('\n');
     const newString = newLines.join('\n');
     if (oldString === newString) return;
+
+    let startLine;
+    let endLine;
+    if (currentHunkHeader) {
+      const oldCount = currentHunkHeader.oldCount;
+      const newCount = currentHunkHeader.newCount;
+      startLine = oldCount > 0 ? currentHunkHeader.oldStart : currentHunkHeader.newStart;
+      const effectiveCount = oldCount > 0 ? oldCount : newCount;
+      if (effectiveCount > 1) {
+        endLine = startLine + effectiveCount - 1;
+      }
+    }
+
     operations.push({
       filePath: currentPath,
       kind: currentKind,
       oldString,
       newString,
-      toolName: 'edit'
+      toolName: 'edit',
+      startLine,
+      endLine,
     });
   };
 
@@ -120,6 +157,7 @@ export function parseApplyPatchToOperations(patchText) {
       flushAdd();
       currentPath = line.slice('*** Update File: '.length).trim();
       currentKind = 'update';
+      currentHunkHeader = null;
       oldLines = [];
       newLines = [];
       addFileLines = [];
@@ -131,6 +169,7 @@ export function parseApplyPatchToOperations(patchText) {
       flushAdd();
       currentPath = line.slice('*** Add File: '.length).trim();
       currentKind = 'add';
+      currentHunkHeader = null;
       oldLines = [];
       newLines = [];
       addFileLines = [];
@@ -142,6 +181,7 @@ export function parseApplyPatchToOperations(patchText) {
       flushAdd();
       currentPath = line.slice('*** Delete File: '.length).trim();
       currentKind = 'delete';
+      currentHunkHeader = null;
       oldLines = [];
       newLines = [];
       addFileLines = [];
@@ -161,6 +201,7 @@ export function parseApplyPatchToOperations(patchText) {
       flushAdd();
       currentPath = null;
       currentKind = null;
+      currentHunkHeader = null;
       oldLines = [];
       newLines = [];
       addFileLines = [];
@@ -185,6 +226,7 @@ export function parseApplyPatchToOperations(patchText) {
     // update
     if (line.startsWith('@@')) {
       flushUpdate();
+      currentHunkHeader = parseHunkHeader(line);
       oldLines = [];
       newLines = [];
       continue;

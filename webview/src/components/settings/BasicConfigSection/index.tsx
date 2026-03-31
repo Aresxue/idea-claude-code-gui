@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styles from './style.module.less';
 import { useTranslation } from 'react-i18next';
+import type { DiffThemeMode } from '../../../utils/diffTheme';
 import AppearanceTab from './AppearanceTab';
 import BehaviorTab from './BehaviorTab';
 import EnvironmentTab from './EnvironmentTab';
@@ -48,6 +49,9 @@ interface BasicConfigSectionProps {
   // User message bubble color configuration
   userMsgColor?: string;
   onUserMsgColorChange?: (color: string) => void;
+  // Diff theme configuration
+  diffTheme?: DiffThemeMode;
+  onDiffThemeChange?: (theme: DiffThemeMode) => void;
   // Diff expanded by default configuration
   diffExpandedByDefault?: boolean;
   onDiffExpandedByDefaultChange?: (enabled: boolean) => void;
@@ -100,6 +104,8 @@ const BasicConfigSection = (props: BasicConfigSectionProps) => {
           onChatBgColorChange={props.onChatBgColorChange}
           userMsgColor={props.userMsgColor}
           onUserMsgColorChange={props.onUserMsgColorChange}
+          diffTheme={props.diffTheme}
+          onDiffThemeChange={props.onDiffThemeChange}
         />
       )}
 

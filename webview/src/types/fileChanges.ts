@@ -13,6 +13,8 @@ export interface EditOperation {
   additions: number;
   deletions: number;
   replaceAll?: boolean;
+  lineStart?: number;
+  lineEnd?: number;
 }
 
 /** Aggregated file change summary */
@@ -24,6 +26,9 @@ export interface FileChangeSummary {
   additions: number;
   /** Total deletions (sum of all operations) */
   deletions: number;
+  /** First reliable line range for file-level navigation */
+  lineStart?: number;
+  lineEnd?: number;
   /** All edit operations for this file (for showMultiEditDiff) */
   operations: EditOperation[];
 }

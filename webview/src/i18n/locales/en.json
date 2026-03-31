@@ -178,6 +178,17 @@
         "reset": "Reset",
         "hint": "Customize the chat area background color. Leave empty to follow the theme default."
       },
+      "diffTheme": {
+        "label": "Diff Theme",
+        "follow": "Follow UI",
+        "followDesc": "Match the current chat UI light or dark theme",
+        "editor": "Follow Editor",
+        "editorDesc": "Stay closer to the IDE editor diff atmosphere",
+        "light": "Light",
+        "lightDesc": "Cleaner and better integrated with the settings page",
+        "softDark": "Soft Dark",
+        "softDarkDesc": "Keep code contrast without the harsh black background"
+      },
       "soundNotification": {
         "label": "Task Completion Sound",
         "enabled": "Enabled",
@@ -1068,6 +1079,7 @@
     "editPrefix": "Edit: {{fileName}}",
     "lineRange": "Lines {{start}}-{{end}}",
     "lineSingle": "Line {{line}}",
+    "editLocationsSuffix": " more",
     "filePath": "File path:",
     "unknownTool": "Unknown tool",
     "bashGroupBatchRun": "Batch Run Commands",

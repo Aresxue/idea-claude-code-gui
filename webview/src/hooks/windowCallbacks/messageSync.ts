@@ -204,6 +204,32 @@ export const preserveStreamingAssistantContent = (
   return copy;
 };
 
+/**
+ * When Codex compacts or summarizes a long conversation, backend snapshots can
+ * briefly shrink and omit the newest in-memory turn. Preserve that trailing
+ * turn locally until the backend catches up, instead of wiping it from the UI.
+ */
+export const preserveLatestMessagesOnShrink = (
+  prevList: ClaudeMessage[],
+  nextList: ClaudeMessage[],
+  provider: string,
+): ClaudeMessage[] => {
+  if (provider !== 'codex') return nextList;
+  if (nextList.length >= prevList.length) return nextList;
+  if (prevList.length === 0 || nextList.length === 0) return nextList;
+
+  const preservedTail = prevList.slice(nextList.length);
+  if (preservedTail.length === 0) return nextList;
+
+  const hasStreamingTail = preservedTail.some((msg) => msg.type === 'assistant' && (msg.isStreaming || !!msg.__turnId));
+  const hasRecentUserTail = preservedTail.some((msg) => msg.type === 'user');
+  if (!hasStreamingTail && !hasRecentUserTail) {
+    return nextList;
+  }
+
+  return [...nextList, ...preservedTail];
+};
+
 // ---------------------------------------------------------------------------
 // Streaming assistant preservation
 // ---------------------------------------------------------------------------
@@ -254,10 +280,16 @@ export const ensureStreamingAssistantInList = (
   for (let i = prevList.length - 1; i >= 0; i--) {
     const msg = prevList[i];
     if (msg.type === 'assistant' && msg.isStreaming && msg.__turnId && msg.__turnId > 0) {
-      const alreadyPresent = resultList.some(
-        (m) => m.type === 'assistant' && m.__turnId === msg.__turnId,
-      );
-      if (!alreadyPresent) {
+      const alreadyPresent = resultList.some((m) => {
+        if (m.type !== 'assistant') return false;
+        if (m.__turnId === msg.__turnId) return true;
+        if (msg.timestamp && m.timestamp === msg.timestamp) return true;
+        return false;
+      });
+      const assistantAlreadyAtOrAfterPosition =
+        i < resultList.length && resultList.slice(i).some((m) => m.type === 'assistant');
+
+      if (!alreadyPresent && !assistantAlreadyAtOrAfterPosition) {
         const result = [...resultList, msg];
         return { list: result, streamingIndex: result.length - 1 };
       }

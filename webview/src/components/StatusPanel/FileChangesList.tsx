@@ -23,8 +23,8 @@ const FileChangesList = memo(({
 }: FileChangesListProps) => {
   const { t } = useTranslation();
 
-  const handleOpenFile = useCallback((filePath: string) => {
-    openFile(filePath);
+  const handleOpenFile = useCallback((filePath: string, lineStart?: number, lineEnd?: number) => {
+    openFile(filePath, lineStart, lineEnd);
   }, []);
 
   const handleShowDiff = useCallback((fileChange: FileChangeSummary) => {
@@ -88,7 +88,7 @@ const FileChangesList = memo(({
               {/* File name */}
               <span
                 className="file-change-name"
-                onClick={() => handleOpenFile(fileChange.filePath)}
+                onClick={() => handleOpenFile(fileChange.filePath, fileChange.lineStart, fileChange.lineEnd)}
                 title={fileChange.filePath}
               >
                 {fileChange.fileName}

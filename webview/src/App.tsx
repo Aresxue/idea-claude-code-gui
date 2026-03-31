@@ -27,6 +27,8 @@ import {
 import type { ContextInfo, ViewMode } from './hooks';
 import { formatTime } from './utils/helpers';
 import { extractMarkdownContent } from './utils/copyUtils';
+import { applyDiffTheme, getStoredDiffTheme } from './utils/diffTheme';
+import { extractTodosFromToolUse } from './utils/todoToolNormalization';
 import type { Attachment, ChatInputBoxHandle } from './components/ChatInputBox/types';
 import { StatusPanel, StatusPanelErrorBoundary } from './components/StatusPanel';
 import { ToastContainer, type ToastMessage } from './components/Toast';
@@ -42,7 +44,6 @@ import { APP_VERSION } from './version/version';
 import type {
   ClaudeMessage,
   HistoryData,
-  TodoItem,
   ToolResultBlock,
 } from './types';
 
@@ -116,6 +117,12 @@ const App = () => {
   // ── Theme & context actions ──
   useThemeInit();
   useContextActions();
+
+  // Apply diff theme on app startup so diff styles work before opening Settings.
+  useEffect(() => {
+    const ideTheme = window.__INITIAL_IDE_THEME__ ?? null;
+    applyDiffTheme(getStoredDiffTheme(), ideTheme);
+  }, []);
 
   // ── Scroll behavior ──
   const {
@@ -368,18 +375,14 @@ const App = () => {
       if (msg.type !== 'assistant') continue;
       const blocks = getContentBlocks(msg);
       for (let j = blocks.length - 1; j >= 0; j--) {
-        const block = blocks[j];
-        if (
-          block.type === 'tool_use' &&
-          block.name?.toLowerCase() === 'todowrite' &&
-          Array.isArray((block.input as { todos?: TodoItem[] })?.todos)
-        ) {
-          return (block.input as { todos: TodoItem[] }).todos;
+        const todos = extractTodosFromToolUse(blocks[j]);
+        if (todos && todos.length > 0) {
+          return todos;
         }
       }
     }
     return [];
-  }, [messages]);
+  }, [messages, getContentBlocks]);
 
   const canRewindFromMessageIndex = (userMessageIndex: number) => {
     if (userMessageIndex < 0 || userMessageIndex >= mergedMessages.length) return false;

@@ -1,6 +1,8 @@
-import type { ToolInput } from '../types';
+import type { ToolInput, ToolResultBlock } from '../types';
 import { getFileName, truncate } from './helpers';
 import { extractFilePathFromCommand, isCommandToolName, unwrapShellCommand } from './toolCommandPath';
+import { normalizeToolInput } from './toolInputNormalization';
+import { normalizeToolName } from './toolConstants';
 
 const SPECIAL_FILES = new Set([
   'makefile', 'dockerfile', 'jenkinsfile', 'vagrantfile',
@@ -35,6 +37,112 @@ const parseNumber = (value: unknown): number | undefined => {
     return Number(value);
   }
   return undefined;
+};
+
+const extractToolResultText = (result?: ToolResultBlock | null): string | undefined => {
+  if (!result) {
+    return undefined;
+  }
+
+  if (typeof result.content === 'string') {
+    return result.content;
+  }
+
+  if (Array.isArray(result.content)) {
+    const text = result.content
+      .map((item) => (item && typeof item.text === 'string' ? item.text : ''))
+      .filter(Boolean)
+      .join('\n');
+    return text || undefined;
+  }
+
+  return undefined;
+};
+
+const parseUnifiedDiffFirstHunk = (text?: string): { start?: number; end?: number } => {
+  if (!text) {
+    return {};
+  }
+
+  const lines = text.split(/\r?\n/);
+  const hunkHeaderIndex = lines.findIndex((line) => /^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/.test(line));
+  if (hunkHeaderIndex === -1) {
+    return {};
+  }
+
+  const header = lines[hunkHeaderIndex];
+  const match = header.match(/^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/);
+  if (!match) {
+    return {};
+  }
+
+  const oldStart = Number(match[1]);
+  const oldCount = match[2] ? Number(match[2]) : 1;
+  const newStart = Number(match[3]);
+  const newCount = match[4] ? Number(match[4]) : 1;
+
+  let oldLine = oldStart;
+  let newLine = newStart;
+  let contextLineCount = 0;
+  const addedLines: number[] = [];
+  const deletedLines: number[] = [];
+
+  for (let index = hunkHeaderIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@/.test(line)) {
+      break;
+    }
+    if (!line) {
+      continue;
+    }
+    if (line.startsWith('\\ No newline at end of file')) {
+      continue;
+    }
+    if (line.startsWith('+')) {
+      addedLines.push(newLine);
+      newLine += 1;
+      continue;
+    }
+    if (line.startsWith('-')) {
+      deletedLines.push(oldLine);
+      oldLine += 1;
+      continue;
+    }
+    if (line.startsWith(' ')) {
+      contextLineCount += 1;
+      oldLine += 1;
+      newLine += 1;
+    }
+  }
+
+  if (addedLines.length > 0 && deletedLines.length === 0) {
+    return {
+      start: addedLines[0],
+      end: addedLines.length > 1 ? addedLines[addedLines.length - 1] : undefined,
+    };
+  }
+
+  if (deletedLines.length > 0 && addedLines.length === 0) {
+    return {
+      start: deletedLines[0],
+      end: deletedLines.length > 1 ? deletedLines[deletedLines.length - 1] : undefined,
+    };
+  }
+
+  if (addedLines.length > 0 && deletedLines.length > 0 && contextLineCount > 0) {
+    return {
+      start: addedLines[0],
+      end: addedLines.length > 1 ? addedLines[addedLines.length - 1] : undefined,
+    };
+  }
+
+  const start = oldCount > 0 ? oldStart : newStart;
+  const effectiveCount = oldCount > 0 ? oldCount : newCount;
+
+  return {
+    start,
+    end: effectiveCount > 1 ? start + effectiveCount - 1 : undefined,
+  };
 };
 
 const relativizeDisplayPath = (filePath: string, workdir?: string): string => {
@@ -98,20 +206,21 @@ export interface ToolTargetInfo {
 }
 
 export const resolveToolTarget = (input: ToolInput, name?: string): ToolTargetInfo | undefined => {
+  const normalizedInput = normalizeToolInput(name, input) ?? input;
   const workdir = typeof input.workdir === 'string' ? input.workdir : undefined;
   const standardPath =
-    (typeof input.file_path === 'string' ? input.file_path : undefined) ??
-    (typeof input.path === 'string' ? input.path : undefined) ??
-    (typeof input.target_file === 'string' ? input.target_file : undefined) ??
-    (typeof input.notebook_path === 'string' ? input.notebook_path : undefined);
+    (typeof normalizedInput.file_path === 'string' ? normalizedInput.file_path : undefined) ??
+    (typeof normalizedInput.path === 'string' ? normalizedInput.path : undefined) ??
+    (typeof normalizedInput.target_file === 'string' ? normalizedInput.target_file : undefined) ??
+    (typeof normalizedInput.notebook_path === 'string' ? normalizedInput.notebook_path : undefined);
 
-  const lowerName = (name ?? '').toLowerCase();
+  const lowerName = normalizeToolName(name ?? '');
 
   // Handle apply_patch tool - extract file path from patch content
   if (lowerName === 'apply_patch') {
-    const patchContent = (typeof input.input === 'string' ? input.input : undefined) ??
-      (typeof input.patch === 'string' ? input.patch : undefined) ??
-      (typeof input.content === 'string' ? input.content : undefined);
+    const patchContent = (typeof normalizedInput.input === 'string' ? normalizedInput.input : undefined) ??
+      (typeof normalizedInput.patch === 'string' ? normalizedInput.patch : undefined) ??
+      (typeof normalizedInput.content === 'string' ? normalizedInput.content : undefined);
 
     if (patchContent) {
       const paths = extractPathsFromPatch(patchContent);
@@ -145,8 +254,8 @@ export const resolveToolTarget = (input: ToolInput, name?: string): ToolTargetIn
     isCommandToolName(lowerName);
 
   // Codex uses 'cmd', others use 'command'
-  const commandStr = (typeof input.command === 'string' ? input.command : undefined) ??
-    (typeof input.cmd === 'string' ? input.cmd : undefined);
+  const commandStr = (typeof normalizedInput.command === 'string' ? normalizedInput.command : undefined) ??
+    (typeof normalizedInput.cmd === 'string' ? normalizedInput.cmd : undefined);
 
   const rawPath = standardPath ??
     ((isCommandTool && commandStr)
@@ -177,7 +286,11 @@ export const resolveToolTarget = (input: ToolInput, name?: string): ToolTargetIn
   };
 };
 
-export const getToolLineInfo = (input: ToolInput, target?: ToolTargetInfo): { start?: number; end?: number } => {
+export const getToolLineInfo = (
+  input: ToolInput,
+  target?: ToolTargetInfo,
+  result?: ToolResultBlock | null,
+): { start?: number; end?: number } => {
   const offset = parseNumber(input.offset);
   const limit = parseNumber(input.limit);
   if (offset !== undefined && limit !== undefined) {
@@ -199,10 +312,23 @@ export const getToolLineInfo = (input: ToolInput, target?: ToolTargetInfo): { st
     return { start: startLine, end: endLine };
   }
 
+  const resultLineInfo = parseUnifiedDiffFirstHunk(extractToolResultText(result));
+  if (resultLineInfo.start !== undefined) {
+    return resultLineInfo;
+  }
+
   return {
     start: target?.lineStart,
     end: target?.lineEnd,
   };
+};
+
+export const getToolEditCount = (input: ToolInput): number => {
+  const edits = input.edits;
+  if (!Array.isArray(edits)) {
+    return 0;
+  }
+  return edits.filter((item) => item && typeof item === 'object').length;
 };
 
 export const summarizeToolCommand = (command?: string): string | undefined => {

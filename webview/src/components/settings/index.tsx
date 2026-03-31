@@ -92,6 +92,8 @@ const SettingsView = ({
     setChatBgColor,
     userMsgColor,
     setUserMsgColor,
+    diffTheme,
+    setDiffTheme,
   } = useSettingsThemeSync();
 
   // Basic settings actions: node path, working dir, streaming, shortcuts, sound, commit prompt, etc.
@@ -408,6 +410,8 @@ const SettingsView = ({
               onChatBgColorChange={setChatBgColor}
               userMsgColor={userMsgColor}
               onUserMsgColorChange={setUserMsgColor}
+              diffTheme={diffTheme}
+              onDiffThemeChange={setDiffTheme}
               diffExpandedByDefault={diffExpandedByDefault}
               onDiffExpandedByDefaultChange={setDiffExpandedByDefault}
               soundNotificationEnabled={soundNotificationEnabled}

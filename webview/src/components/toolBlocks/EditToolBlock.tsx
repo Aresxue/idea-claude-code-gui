@@ -4,7 +4,8 @@ import type { ToolInput, ToolResultBlock } from '../../types';
 import { useIsToolDenied } from '../../hooks/useIsToolDenied';
 import { openFile, showDiff, refreshFile } from '../../utils/bridge';
 import { getFileIcon } from '../../utils/fileIcons';
-import { getToolLineInfo, resolveToolTarget } from '../../utils/toolPresentation';
+import { getToolLineInfo, getToolEditCount, resolveToolTarget } from '../../utils/toolPresentation';
+import { normalizeToolInput } from '../../utils/toolInputNormalization';
 import GenericToolBlock from './GenericToolBlock';
 
 interface EditToolBlockProps {
@@ -100,28 +101,30 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
 
   const isDenied = useIsToolDenied(toolId);
 
+  const normalizedInput = input ? normalizeToolInput(name, input) : input;
+
   // Determine tool call status based on result
   // If denied, treat as completed (show error state)
   const isCompleted = (result !== undefined && result !== null) || isDenied;
   // If denied, show as error state
   const isError = isDenied || (isCompleted && result?.is_error === true);
 
-  const target = input ? resolveToolTarget({
-    ...input,
-    file_path: (typeof input.file_path === 'string' ? input.file_path : undefined) ??
-      (typeof input.filePath === 'string' ? input.filePath : undefined),
-    target_file: (typeof input.target_file === 'string' ? input.target_file : undefined) ??
-      (typeof input.targetFile === 'string' ? input.targetFile : undefined),
+  const target = normalizedInput ? resolveToolTarget({
+    ...normalizedInput,
+    file_path: (typeof normalizedInput.file_path === 'string' ? normalizedInput.file_path : undefined) ??
+      (typeof normalizedInput.filePath === 'string' ? normalizedInput.filePath : undefined),
+    target_file: (typeof normalizedInput.target_file === 'string' ? normalizedInput.target_file : undefined) ??
+      (typeof normalizedInput.targetFile === 'string' ? normalizedInput.targetFile : undefined),
   }, name) : undefined;
   const filePath = target?.openPath;
 
   const oldString =
-    (typeof input?.old_string === 'string' ? input.old_string : undefined) ??
-    (typeof input?.oldString === 'string' ? input.oldString : undefined) ??
+    (typeof normalizedInput?.old_string === 'string' ? normalizedInput.old_string : undefined) ??
+    (typeof normalizedInput?.oldString === 'string' ? normalizedInput.oldString : undefined) ??
     '';
   const newString =
-    (typeof input?.new_string === 'string' ? input.new_string : undefined) ??
-    (typeof input?.newString === 'string' ? input.newString : undefined) ??
+    (typeof normalizedInput?.new_string === 'string' ? normalizedInput.new_string : undefined) ??
+    (typeof normalizedInput?.newString === 'string' ? normalizedInput.newString : undefined) ??
     '';
 
   const diff = useMemo(() => {
@@ -139,15 +142,17 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
     }
   }, [filePath, isCompleted, isError]);
 
-  if (!input) {
+  if (!normalizedInput) {
     return null;
   }
 
   if (!oldString && !newString) {
-    return <GenericToolBlock name={name} input={input} result={result} toolId={toolId} />;
+    return <GenericToolBlock name={name} input={normalizedInput} result={result} toolId={toolId} />;
   }
 
-  const lineInfo = input && target ? getToolLineInfo(input, target) : {};
+  const lineInfo = normalizedInput && target ? getToolLineInfo(normalizedInput, target, result) : {};
+  const editCount = normalizedInput ? getToolEditCount(normalizedInput) : 0;
+  const extraEditCount = editCount > 1 ? editCount - 1 : 0;
 
   const handleFileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -274,6 +279,12 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
                 {lineInfo.end && lineInfo.end !== lineInfo.start
                   ? t('tools.lineRange', { start: lineInfo.start, end: lineInfo.end })
                   : t('tools.lineSingle', { line: lineInfo.start })}
+                {extraEditCount > 0 ? ` +${extraEditCount}${t('tools.editLocationsSuffix')}` : ''}
+              </span>
+            )}
+            {!lineInfo.start && extraEditCount > 0 && (
+              <span className="tool-title-summary" style={{ marginLeft: '8px', fontSize: '12px' }}>
+                +{extraEditCount}{t('tools.editLocationsSuffix')}
               </span>
             )}
             
@@ -287,9 +298,9 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {diff.additions > 0 && <span style={{ color: '#89d185' }}>+{diff.additions}</span>}
+                {diff.additions > 0 && <span style={{ color: 'var(--diff-added-accent)' }}>+{diff.additions}</span>}
                 {diff.additions > 0 && diff.deletions > 0 && <span style={{ margin: '0 4px' }} />}
-                {diff.deletions > 0 && <span style={{ color: '#ff6b6b' }}>-{diff.deletions}</span>}
+                {diff.deletions > 0 && <span style={{ color: 'var(--diff-deleted-accent)' }}>-{diff.deletions}</span>}
               </span>
             )}
           </div>
@@ -305,7 +316,7 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
               fontFamily: 'var(--idea-editor-font-family, monospace)',
               fontSize: '12px',
               lineHeight: 1.5,
-              background: '#1e1e1e',
+              background: 'var(--diff-surface)',
               // Normalize tab width to prevent indentation shifts across environments
               tabSize: 4 as unknown as number,
               MozTabSize: 4 as unknown as number,
@@ -330,11 +341,11 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
                   style={{
                     display: 'flex',
                     background: isDeleted
-                      ? 'rgba(80, 20, 20, 0.3)'
+                      ? 'var(--diff-deleted-bg)'
                       : isAdded
-                        ? 'rgba(20, 80, 20, 0.3)'
+                        ? 'var(--diff-added-bg)'
                         : 'transparent',
-                    color: '#ccc',
+                    color: 'var(--diff-text)',
                     minWidth: '100%',
                   }}
                 >
@@ -343,10 +354,10 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
                       width: '40px',
                       textAlign: 'right',
                       paddingRight: '10px',
-                      color: '#666',
+                      color: 'var(--diff-muted-text)',
                       userSelect: 'none',
-                      borderRight: '1px solid #333',
-                      background: '#252526',
+                      borderRight: '1px solid var(--diff-gutter-border)',
+                      background: 'var(--diff-gutter-bg)',
                       flex: '0 0 40px',
                     }}
                   />
@@ -354,12 +365,12 @@ const EditToolBlock = ({ name, input, result, toolId }: EditToolBlockProps) => {
                     style={{
                       width: '24px',
                       textAlign: 'center',
-                      color: isDeleted ? '#ff6b6b' : isAdded ? '#89d185' : '#666',
+                      color: isDeleted ? 'var(--diff-deleted-accent)' : isAdded ? 'var(--diff-added-accent)' : 'var(--diff-muted-text)',
                       userSelect: 'none',
                       background: isDeleted
-                        ? 'rgba(80, 20, 20, 0.2)'
+                        ? 'var(--diff-deleted-glyph-bg)'
                         : isAdded
-                          ? 'rgba(20, 80, 20, 0.2)'
+                          ? 'var(--diff-added-glyph-bg)'
                           : 'transparent',
                       opacity: isUnchanged ? 0.5 : 0.7,
                       flex: '0 0 24px',

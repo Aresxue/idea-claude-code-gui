@@ -15,6 +15,7 @@ import {
   ensureStreamingAssistantInList,
   getRawUuid,
   preserveLastAssistantIdentity,
+  preserveLatestMessagesOnShrink,
   preserveStreamingAssistantContent,
 } from '../messageSync';
 import { releaseSessionTransition } from '../sessionTransition';
@@ -111,7 +112,11 @@ export function registerMessageCallbacks(
               findLastAssistantIndex,
               patchAssistantForStreaming,
             );
-            const result = appendOptimisticMessageIfMissing(prev, smartMerged);
+            const result = preserveLatestMessagesOnShrink(
+              prev,
+              appendOptimisticMessageIfMissing(prev, smartMerged),
+              options.currentProviderRef.current,
+            );
 
             // FIX: In Claude mode, update streamingMessageIndexRef so that
             // onContentDelta knows which assistant message to update.
@@ -162,7 +167,14 @@ export function registerMessageCallbacks(
 
           const lastAssistantIdx = findLastAssistantIndex(parsed);
           if (lastAssistantIdx < 0) {
-            return ensureStreamingAssistantPreserved(prev, appendOptimisticMessageIfMissing(prev, parsed));
+            return ensureStreamingAssistantPreserved(
+              prev,
+              preserveLatestMessagesOnShrink(
+                prev,
+                appendOptimisticMessageIfMissing(prev, parsed),
+                options.currentProviderRef.current,
+              ),
+            );
           }
         }
 
@@ -185,30 +197,30 @@ export function registerMessageCallbacks(
           });
 
           smartMerged = preserveLastAssistantIdentity(prev, smartMerged, findLastAssistantIndex);
+          smartMerged = preserveLatestMessagesOnShrink(prev, smartMerged, options.currentProviderRef.current);
           return ensureStreamingAssistantPreserved(prev, appendOptimisticMessageIfMissing(prev, smartMerged));
         }
 
-        // Streaming + !useBackendStreamingRender: only update on tool_use changes
-        const lastAssistantIdx = findLastAssistantIndex(parsed);
-        if (lastAssistantIdx < 0) {
-          return ensureStreamingAssistantPreserved(prev, parsed);
+        // Streaming + !useBackendStreamingRender: accept any snapshot that introduces or preserves tool_use blocks.
+        let totalToolUseCount = 0;
+        for (const message of parsed) {
+          if (message.type !== 'assistant') continue;
+          const blocks = extractRawBlocks(message.raw);
+          totalToolUseCount += blocks.filter((b) => b?.type === 'tool_use').length;
         }
 
-        const lastAssistant = parsed[lastAssistantIdx];
-        const lastAssistantBlocks = extractRawBlocks(lastAssistant.raw);
-        const toolUseCount = lastAssistantBlocks.filter((b) => b?.type === 'tool_use').length;
-        if (toolUseCount < seenToolUseCountRef.current) {
-          seenToolUseCountRef.current = toolUseCount;
+        if (totalToolUseCount < seenToolUseCountRef.current) {
+          seenToolUseCountRef.current = totalToolUseCount;
         }
-        const hasNewToolUse = toolUseCount > seenToolUseCountRef.current;
-        const hasToolUse = toolUseCount > 0;
+        const hasNewToolUse = totalToolUseCount > seenToolUseCountRef.current;
+        const hasToolUse = totalToolUseCount > 0;
 
         if (!hasNewToolUse && !hasToolUse) {
           return prev;
         }
 
         if (hasNewToolUse) {
-          seenToolUseCountRef.current = toolUseCount;
+          seenToolUseCountRef.current = totalToolUseCount;
           activeTextSegmentIndexRef.current = -1;
           activeThinkingSegmentIndexRef.current = -1;
         }
@@ -224,6 +236,7 @@ export function registerMessageCallbacks(
           findLastAssistantIndex,
           patchAssistantForStreaming,
         );
+        patched = preserveLatestMessagesOnShrink(prev, patched, options.currentProviderRef.current);
 
         const patchedAssistantIdx = findLastAssistantIndex(patched);
         if (patchedAssistantIdx >= 0 && patched[patchedAssistantIdx]?.type === 'assistant') {
@@ -281,6 +294,12 @@ export function registerMessageCallbacks(
     processUpdateMessages(json);
   };
 
+  const pendingMessages = (window as unknown as Record<string, unknown>).__pendingUpdateMessages;
+  if (typeof pendingMessages === 'string' && pendingMessages.length > 0) {
+    delete (window as unknown as Record<string, unknown>).__pendingUpdateMessages;
+    window.updateMessages(pendingMessages);
+  }
+
   window.updateStatus = (text) => {
     // Do not release the transition guard from generic status updates.
     setStatus(text);
@@ -315,7 +334,35 @@ export function registerMessageCallbacks(
   };
 
   window.showThinkingStatus = (value) => setIsThinking(isTruthy(value));
+  window.showSummary = (summary) => {
+    if (!summary || !summary.trim()) return;
+    setStatus(summary);
+  };
   window.setHistoryData = (data) => setHistoryData(data);
+
+  const pendingStatus = (window as unknown as Record<string, unknown>).__pendingStatusText;
+  if (typeof pendingStatus === 'string' && pendingStatus.length > 0) {
+    delete (window as unknown as Record<string, unknown>).__pendingStatusText;
+    window.updateStatus?.(pendingStatus);
+  }
+
+  const pendingLoading = window.__pendingLoadingState;
+  if (typeof pendingLoading === 'boolean') {
+    delete window.__pendingLoadingState;
+    window.showLoading?.(pendingLoading);
+  }
+
+  const pendingUserMessage = window.__pendingUserMessage;
+  if (typeof pendingUserMessage === 'string' && pendingUserMessage.length > 0) {
+    delete window.__pendingUserMessage;
+    window.addUserMessage?.(pendingUserMessage);
+  }
+
+  const pendingSummary = (window as unknown as Record<string, unknown>).__pendingSummaryText;
+  if (typeof pendingSummary === 'string' && pendingSummary.length > 0) {
+    delete (window as unknown as Record<string, unknown>).__pendingSummaryText;
+    window.showSummary?.(pendingSummary);
+  }
 
   window.patchMessageUuid = (content, uuid) => {
     if (window.__sessionTransitioning) return;
