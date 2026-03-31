@@ -21,7 +21,7 @@ export const ScrollControl = memo(({ containerRef, inputAreaRef }: ScrollControl
   const [visible, setVisible] = useState(false);
   const [direction, setDirection] = useState<'up' | 'down'>('down');
   const [bottomOffset, setBottomOffset] = useState(120);
-  const hideTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const THRESHOLD = 100; // Distance from bottom threshold (pixels)
   const HIDE_DELAY = 1500; // Delay before hiding after scrolling stops (milliseconds)

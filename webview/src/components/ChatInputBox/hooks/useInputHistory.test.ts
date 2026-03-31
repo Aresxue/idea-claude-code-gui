@@ -148,17 +148,37 @@ describe('useInputHistory', () => {
   });
 
   it('handles localStorage quota by dropping older entries and retrying', () => {
-    // vi.spyOn does not reliably intercept jsdom's localStorage.setItem,
-    // so we patch it via the Storage prototype instead.
-    const proto = Object.getPrototypeOf(window.localStorage) as Storage;
-    const originalSetItem = proto.setItem;
-    proto.setItem = function (key: string, value: string) {
-      const str = String(value);
-      if (key === STORAGE_KEY && str.length > SIMULATED_QUOTA_LIMIT) {
-        throw new DOMException('quota', 'QuotaExceededError');
-      }
-      return originalSetItem.call(this, key, str);
-    };
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    const backingStore: Record<string, string> = {};
+    const storage = {
+      getItem(key: string) {
+        return Object.prototype.hasOwnProperty.call(backingStore, key) ? backingStore[key] : null;
+      },
+      setItem(key: string, value: string) {
+        const str = String(value);
+        if (key === STORAGE_KEY && str.length > SIMULATED_QUOTA_LIMIT) {
+          throw new DOMException('quota', 'QuotaExceededError');
+        }
+        backingStore[key] = str;
+      },
+      removeItem(key: string) {
+        delete backingStore[key];
+      },
+      clear() {
+        Object.keys(backingStore).forEach((key) => delete backingStore[key]);
+      },
+      key(index: number) {
+        return Object.keys(backingStore)[index] ?? null;
+      },
+      get length() {
+        return Object.keys(backingStore).length;
+      },
+    } satisfies Storage;
+
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: storage,
+    });
 
     try {
       const editable = createEditable();
@@ -178,7 +198,9 @@ describe('useInputHistory', () => {
       expect(stored).toHaveLength(1);
       expect(stored[0]).toBe('c'.repeat(100));
     } finally {
-      proto.setItem = originalSetItem;
+      if (originalDescriptor) {
+        Object.defineProperty(window, 'localStorage', originalDescriptor);
+      }
     }
   });
 
