@@ -108,4 +108,21 @@ describe('mergeConsecutiveAssistantMessages', () => {
     expect(result[0].__turnId).toBe(1);
     expect(result[2].__turnId).toBe(2);
   });
+
+  it('does not merge assistant messages from different turns', () => {
+    const messages: ClaudeMessage[] = [
+      makeMsg('assistant', 'first turn answer', {
+        __turnId: 10,
+        raw: { content: [{ type: 'text', text: 'first turn answer' }] } as any,
+      }),
+      makeMsg('assistant', 'second turn answer', {
+        __turnId: 11,
+        raw: { content: [{ type: 'text', text: 'second turn answer' }] } as any,
+      }),
+    ];
+
+    const result = mergeConsecutiveAssistantMessages(messages, normalizeBlocks);
+    expect(result).toHaveLength(2);
+    expect(result.map((message) => message.__turnId)).toEqual([10, 11]);
+  });
 });

@@ -101,15 +101,22 @@ export function useMessageProcessing({ messages, currentSessionId, t }: UseMessa
     [normalizeBlocks, localizeMessage]
   );
 
-  // Merge consecutive assistant messages to fix style inconsistencies in history
+  // Merge assistant fragments before visibility filtering so hidden boundary
+  // messages still separate distinct turns in the rendered timeline.
   const mergedMessages = useMemo(() => {
+    const merged = mergeConsecutiveAssistantMessages(
+      messages,
+      normalizeBlocks,
+      mergedAssistantMessageCache.current
+    );
+
     const visible: ClaudeMessage[] = [];
-    for (const message of messages) {
+    for (const message of merged) {
       if (shouldShowMessageCached(message)) {
         visible.push(message);
       }
     }
-    return mergeConsecutiveAssistantMessages(visible, normalizeBlocks, mergedAssistantMessageCache.current);
+    return visible;
   }, [messages, shouldShowMessageCached, normalizeBlocks]);
 
   return {

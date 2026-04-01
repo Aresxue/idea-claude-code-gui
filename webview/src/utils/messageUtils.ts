@@ -402,6 +402,16 @@ export function mergeConsecutiveAssistantMessages(
   };
 
   const shouldMergeAssistantMessage = (previous: ClaudeMessage, next: ClaudeMessage): boolean => {
+    // Distinct streaming turns must stay visually separated even when the
+    // backend emits adjacent assistant fragments during synchronization.
+    if (
+      previous.__turnId !== undefined &&
+      next.__turnId !== undefined &&
+      previous.__turnId !== next.__turnId
+    ) {
+      return false;
+    }
+
     const previousSummary = getAssistantBlockSummary(previous);
     const nextSummary = getAssistantBlockSummary(next);
 
