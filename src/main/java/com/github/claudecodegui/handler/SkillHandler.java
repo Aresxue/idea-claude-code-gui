@@ -10,12 +10,13 @@ import com.google.gson.JsonObject;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.concurrency.AppExecutorUtil;
 
-import javax.swing.*;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,11 +40,8 @@ public class SkillHandler extends BaseMessageHandler {
         "toggle_skill"
     };
 
-    private final JPanel mainPanel;
-
-    public SkillHandler(HandlerContext context, JPanel mainPanel) {
+    public SkillHandler(HandlerContext context) {
         super(context);
-        this.mainPanel = mainPanel;
     }
 
     @Override
@@ -114,23 +112,42 @@ public class SkillHandler extends BaseMessageHandler {
             boolean isCodex = "codex".equalsIgnoreCase(context.getCurrentProvider());
 
             ApplicationManager.getApplication().invokeLater(() -> {
-                JFileChooser chooser = new JFileChooser();
+                FileChooserDescriptor descriptor;
                 if (isCodex) {
                     // Codex skills must be directories containing SKILL.md
-                    chooser.setDialogTitle("选择 Codex Skill 文件夹");
-                    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    descriptor = new FileChooserDescriptor(
+                        false, // chooseFiles
+                        true,  // chooseFolders
+                        false, // chooseJars
+                        false, // chooseJarsAsFiles
+                        false, // chooseJarContents
+                        true   // chooseMultiple
+                    );
+                    descriptor.setTitle("选择 Codex Skill 文件夹");
                 } else {
-                    chooser.setDialogTitle("选择 Skill 文件或文件夹");
-                    chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+                    descriptor = new FileChooserDescriptor(
+                        true,  // chooseFiles
+                        true,  // chooseFolders
+                        false, // chooseJars
+                        false, // chooseJarsAsFiles
+                        false, // chooseJarContents
+                        true   // chooseMultiple
+                    );
+                    descriptor.setTitle("选择 Skill 文件或文件夹");
                 }
-                chooser.setMultiSelectionEnabled(true);
 
-                int result = chooser.showOpenDialog(mainPanel);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    File[] selectedFiles = chooser.getSelectedFiles();
+                // Set initial directory to project base path
+                VirtualFile initialDir = null;
+                String projectPath = context.getProject().getBasePath();
+                if (projectPath != null) {
+                    initialDir = LocalFileSystem.getInstance().findFileByPath(projectPath);
+                }
+
+                VirtualFile[] selectedFiles = FileChooser.chooseFiles(descriptor, context.getProject(), initialDir);
+                if (selectedFiles.length > 0) {
                     List<String> paths = new ArrayList<>();
-                    for (File file : selectedFiles) {
-                        paths.add(file.getAbsolutePath());
+                    for (VirtualFile vf : selectedFiles) {
+                        paths.add(vf.getPath());
                     }
 
                     CompletableFuture.runAsync(() -> {
