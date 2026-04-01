@@ -255,6 +255,14 @@ export function registerStreamingCallbacks(options: UseWindowCallbacksOptions): 
     // Notify backend about stream completion for tab status indicator
     sendBridgeEvent('tab_status_changed', JSON.stringify({ status: 'completed' }));
 
+    // FIX: Cancel any pending coalesced updateMessages rAF.  If onStreamEnd
+    // fires between the rAF scheduling and execution, the stale snapshot
+    // would be processed in the non-streaming path after refs are cleared,
+    // overwriting the final state with an outdated message structure.
+    if (typeof window.__cancelPendingUpdateMessages === 'function') {
+      window.__cancelPendingUpdateMessages();
+    }
+
     // Clear pending throttle timeouts — their content is already in streamingContentRef
     if (contentUpdateTimeoutRef.current) {
       clearTimeout(contentUpdateTimeoutRef.current);
@@ -278,8 +286,13 @@ export function registerStreamingCallbacks(options: UseWindowCallbacksOptions): 
       if (prev.length > 0 && idx >= 0 && idx < prev.length && prev[idx]?.type === 'assistant') {
         const finalContent = streamingContentRef.current;
         newMessages = [...prev];
+        // FIX: Clear __turnId from the streaming message. After streaming ends,
+        // the backend's updateMessages snapshots contain the correct message
+        // structure.  Stale __turnId can interfere with mergeConsecutiveAssistantMessages
+        // when subsequent backend snapshots carry different message splits.
+        const { __turnId: _removedTurnId, ...restWithoutTurnId } = newMessages[idx];
         newMessages[idx] = {
-          ...newMessages[idx],
+          ...restWithoutTurnId,
           content: finalContent || newMessages[idx].content,
           isStreaming: false,
         };

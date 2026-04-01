@@ -83,6 +83,22 @@ export function registerMessageCallbacks(
   let pendingUpdateRaf: number | null = null;
   let pendingUpdateSequence: number | null = null;
 
+  // Expose a cancellation function so onStreamEnd can cancel stale rAF-deferred
+  // updateMessages calls, preventing them from overwriting the final state after
+  // streaming refs are cleared.
+  const cancelPendingUpdateMessages = () => {
+    if (pendingUpdateRaf !== null) {
+      cancelAnimationFrame(pendingUpdateRaf);
+    }
+    pendingUpdateRaf = null;
+    pendingUpdateJson = null;
+    pendingUpdateSequence = null;
+    window.__pendingUpdateRaf = null;
+    window.__pendingUpdateJson = null;
+    window.__pendingUpdateSequence = null;
+  };
+  window.__cancelPendingUpdateMessages = cancelPendingUpdateMessages;
+
   const processUpdateMessages = (json: string, sequence: number | null = null) => {
     const minAcceptedSequence = window.__minAcceptedUpdateSequence ?? 0;
     if (sequence != null && sequence < minAcceptedSequence) {

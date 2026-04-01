@@ -578,6 +578,8 @@ interface Window {
   __pendingUpdateJson?: string | null;
   __pendingUpdateSequence?: number | null;
   __minAcceptedUpdateSequence?: number;
+  /** Cancel pending rAF-deferred updateMessages (set by messageCallbacks, called by onStreamEnd). */
+  __cancelPendingUpdateMessages?: () => void;
 
   /**
    * Rewind result callback - returns the result of a rewind operation
