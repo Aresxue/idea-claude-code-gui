@@ -89,7 +89,7 @@
     "attachmentsUploaded": "[Вложения загружены]",
     "streamingConnected": "Claude обрабатывает запрос",
     "showEarlierMessages": "Показать предыдущие сообщения ({{count}})",
-    "totalDuration": "Общее время"
+    "totalDuration": "Этот ответ занял"
   },
   "settings": {
     "title": "Настройки",

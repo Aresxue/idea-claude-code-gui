@@ -89,7 +89,7 @@
     "attachmentsUploaded": "[Attachments Uploaded]",
     "streamingConnected": "Claude connected, understanding your question",
     "showEarlierMessages": "Show {{count}} earlier messages",
-    "totalDuration": "Total Duration"
+    "totalDuration": "This reply took"
   },
   "settings": {
     "title": "Settings",

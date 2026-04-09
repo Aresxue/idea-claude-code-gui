@@ -89,7 +89,7 @@
     "attachmentsUploaded": "[Archivos adjuntos cargados]",
     "streamingConnected": "Claude conectado, entendiendo tu pregunta",
     "showEarlierMessages": "Mostrar {{count}} mensajes anteriores",
-    "totalDuration": "Duración Total"
+    "totalDuration": "Esta respuesta tardó"
   },
   "settings": {
     "title": "Configuración",
