@@ -56,7 +56,7 @@ public final class JBCefBrowserFactory {
             LOG.info("JBCefBrowser created successfully using builder");
             return browser;
         } catch (Exception e) {
-            LOG.warn("JBCefBrowser builder failed, falling back to default constructor: " + e.getMessage());
+            LOG.warn("JBCefBrowser builder failed, falling back to default constructor (missing OSR and dev-tools config)", e);
             JBCefBrowser browser = new JBCefBrowser();
             configureContextMenu(browser, isDevMode);
             configureKeyboardWorkaround(browser);
@@ -87,7 +87,7 @@ public final class JBCefBrowserFactory {
             LOG.info("JBCefBrowser created successfully with URL");
             return browser;
         } catch (Exception e) {
-            LOG.warn("JBCefBrowser builder failed, falling back to default constructor: " + e.getMessage());
+            LOG.warn("JBCefBrowser builder failed, falling back to default constructor (missing OSR and dev-tools config)", e);
             JBCefBrowser browser = new JBCefBrowser();
             if (url != null && !url.isEmpty()) {
                 browser.loadURL(url);
@@ -179,6 +179,10 @@ public final class JBCefBrowserFactory {
         LOG.info("Context menu " + (isDevMode ? "enabled" : "disabled") + " (devMode=" + isDevMode + ")");
     }
 
+    /**
+     * Workaround for Windows JCEF issue where IME composition and certain key combinations
+     * generate control character events on non-editable fields, causing unwanted input in the chat area.
+     */
     private static void configureKeyboardWorkaround(JBCefBrowserBuilder builder) {
         if (!SystemInfo.isWindows) {
             return;

@@ -39,8 +39,10 @@ export function useGlobalCallbacks({
     const insertSingleFilePath = (filePath: string) => {
       if (!editableRef.current) return;
 
-      // Extract file path and add to path mapping
       const absolutePath = filePath.trim();
+      if (!absolutePath) return;
+
+      // Add path to path mapping
       const fileName = absolutePath.split(/[/\\]/).pop() || absolutePath;
 
       // Add path to pathMappingRef to make it a "valid reference"
@@ -83,48 +85,52 @@ export function useGlobalCallbacks({
     };
 
     window.handleFilePathFromJava = (filePathInput: string | string[]) => {
-      if (!editableRef.current) return;
+      try {
+        if (!editableRef.current) return;
 
-      // Normalize input to string array.
-      // Java side (v0.1.9+) passes a JS array directly via executeJavaScript,
-      // so Array.isArray branch is the primary path.
-      // The string branch is kept for backward compatibility with older Java
-      // versions that passed a single string. It can be removed once v0.1.8
-      // support is no longer needed.
-      let filePaths: string[];
-      if (Array.isArray(filePathInput)) {
-        filePaths = filePathInput;
-      } else if (typeof filePathInput === 'string') {
-        try {
-          const parsed: unknown = JSON.parse(filePathInput);
-          filePaths = Array.isArray(parsed) ? parsed : [filePathInput];
-        } catch {
-          filePaths = [filePathInput];
+        // Normalize input to string array.
+        // Java side (v0.1.9+) passes a JS array directly via executeJavaScript,
+        // so Array.isArray branch is the primary path.
+        // The string branch is kept for backward compatibility with older Java
+        // versions that passed a single string. It can be removed once v0.1.8
+        // support is no longer needed.
+        let filePaths: string[];
+        if (Array.isArray(filePathInput)) {
+          filePaths = filePathInput;
+        } else if (typeof filePathInput === 'string') {
+          try {
+            const parsed: unknown = JSON.parse(filePathInput);
+            filePaths = Array.isArray(parsed) ? parsed : [filePathInput];
+          } catch {
+            filePaths = [filePathInput];
+          }
+        } else {
+          return;
         }
-      } else {
-        return;
-      }
 
-      // Insert all file paths
-      for (const filePath of filePaths) {
-        if (filePath && filePath.trim()) {
-          insertSingleFilePath(filePath.trim());
+        // Insert all file paths
+        for (const filePath of filePaths) {
+          if (filePath && filePath.trim()) {
+            insertSingleFilePath(filePath.trim());
+          }
         }
+
+        // Close all completion menus
+        closeAllCompletions();
+
+        // Directly trigger state update, don't call handleInput (avoid re-detecting completion)
+        const newText = getTextContent();
+        setHasContent(!!newText.trim());
+        adjustHeight();
+        onInput?.(newText);
+
+        // Immediately render file tags
+        setTimeout(() => {
+          renderFileTags();
+        }, 50);
+      } catch (error) {
+        console.error('[useGlobalCallbacks] handleFilePathFromJava failed:', error);
       }
-
-      // Close all completion menus
-      closeAllCompletions();
-
-      // Directly trigger state update, don't call handleInput (avoid re-detecting completion)
-      const newText = getTextContent();
-      setHasContent(!!newText.trim());
-      adjustHeight();
-      onInput?.(newText);
-
-      // Immediately render file tags
-      setTimeout(() => {
-        renderFileTags();
-      }, 50);
     };
 
     // Initial focus — but only if no other input/editable element is focused (B-013)
@@ -182,24 +188,28 @@ export function useGlobalCallbacks({
     };
 
     window.insertCodeSnippetAtCursor = (selectionInfo: string) => {
-      if (!editableRef.current) return;
+      try {
+        if (!editableRef.current) return;
 
-      // Ensure input box has focus
-      editableRef.current.focus();
-      appendExternalSnippetToEnd(selectionInfo);
+        // Ensure input box has focus
+        editableRef.current.focus();
+        appendExternalSnippetToEnd(selectionInfo);
 
-      // Trigger state update
-      const newText = getTextContent();
-      setHasContent(!!newText.trim());
-      adjustHeight();
-      onInput?.(newText);
+        // Trigger state update
+        const newText = getTextContent();
+        setHasContent(!!newText.trim());
+        adjustHeight();
+        onInput?.(newText);
 
-      // Immediately render file tags
-      setTimeout(() => {
-        renderFileTags();
-        // Re-focus after rendering
-        editableRef.current?.focus();
-      }, 50);
+        // Immediately render file tags
+        setTimeout(() => {
+          renderFileTags();
+          // Re-focus after rendering
+          editableRef.current?.focus();
+        }, 50);
+      } catch (error) {
+        console.error('[useGlobalCallbacks] insertCodeSnippetAtCursor failed:', error);
+      }
     };
 
     return () => {

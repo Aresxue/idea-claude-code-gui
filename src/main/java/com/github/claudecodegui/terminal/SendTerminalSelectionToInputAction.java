@@ -54,12 +54,14 @@ public class SendTerminalSelectionToInputAction extends AnAction implements Dumb
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
         String selectedText = resolveSelectedText(e);
-        LOG.info("[TerminalSend] actionPerformed place=" + e.getPlace()
-                + ", project=" + (project == null ? "null" : project.getName())
-                + ", hasTerminalWidget=" + hasTerminalWidgetContext(e)
-                + ", editorContext=" + isTerminalContext(e)
-                + ", textResolved=" + (selectedText != null)
-                + ", textLength=" + (selectedText == null ? 0 : selectedText.length()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[TerminalSend] actionPerformed place=" + e.getPlace()
+                    + ", project=" + (project == null ? "null" : project.getName())
+                    + ", hasTerminalWidget=" + hasTerminalWidgetContext(e)
+                    + ", editorContext=" + isTerminalContext(e)
+                    + ", textResolved=" + (selectedText != null)
+                    + ", textLength=" + (selectedText == null ? 0 : selectedText.length()));
+        }
         if (project == null || selectedText == null) {
             return;
         }
@@ -104,7 +106,10 @@ public class SendTerminalSelectionToInputAction extends AnAction implements Dumb
                     return null;
                 }
                 return editor.getSelectionModel().getSelectedText();
-            } catch (RuntimeException | Error ignored) {
+            } catch (Error e) {
+                throw e;
+            } catch (RuntimeException e) {
+                LOG.debug("[TerminalSend] TerminalDataContextUtils.getEditor failed in DEFAULT provider", e);
                 return null;
             }
         };
@@ -134,8 +139,10 @@ public class SendTerminalSelectionToInputAction extends AnAction implements Dumb
             if (editor != null && isSupportedEditor(editor)) {
                 return editor;
             }
-        } catch (RuntimeException | Error ignored) {
-            // fall through to generic editor context
+        } catch (Error e) {
+            throw e;
+        } catch (RuntimeException e) {
+            LOG.debug("[TerminalSend] TerminalDataContextUtils.getEditor failed, falling back", e);
         }
 
         Editor fallbackEditor = event.getData(CommonDataKeys.EDITOR);

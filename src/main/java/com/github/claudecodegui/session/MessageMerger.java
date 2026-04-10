@@ -136,11 +136,11 @@ public class MessageMerger {
      * Get the unique key for a content block.
      */
     private String getContentBlockKey(JsonObject block) {
-        if (block.has("id") && !block.get("id").isJsonNull()) {
+        if (block.has("id") && block.get("id").isJsonPrimitive()) {
             return block.get("id").getAsString();
         }
 
-        if (block.has("tool_use_id") && !block.get("tool_use_id").isJsonNull()) {
+        if (block.has("tool_use_id") && block.get("tool_use_id").isJsonPrimitive()) {
             return "tool_result:" + block.get("tool_use_id").getAsString();
         }
 
@@ -223,6 +223,8 @@ public class MessageMerger {
         if ("thinking".equals(type)) {
             String existingThinking = getThinkingContent(existingBlock);
             String incomingThinking = getThinkingContent(incomingBlock);
+            // During early streaming, thinking content may not yet be populated,
+            // so type-based matching alone determines block identity.
             if (existingThinking.isEmpty() || incomingThinking.isEmpty()) {
                 return true;
             }

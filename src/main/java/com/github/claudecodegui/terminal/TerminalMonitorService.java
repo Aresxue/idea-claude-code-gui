@@ -198,7 +198,7 @@ public class TerminalMonitorService implements ProjectActivity {
                 title = (String) terminalTitle.getClass().getMethod("getText").invoke(terminalTitle);
             }
         } catch (Exception e) {
-            // ignore
+            LOG.debug("Failed to get terminal widget title", e);
         }
         LOG.debug("Monitoring terminal widget: " + title + " (Class: " + widget.getClass().getName() + ")");
         installLegacySendAction(widget);
@@ -372,7 +372,7 @@ public class TerminalMonitorService implements ProjectActivity {
                         return i;
                     }
                 } catch (Exception e) {
-                    // ignore
+                    LOG.debug("Failed to match widget title for index lookup", e);
                 }
             }
         }
@@ -381,20 +381,25 @@ public class TerminalMonitorService implements ProjectActivity {
 
     /**
      * Get the captured content of a terminal widget.
-     * First tries dynamic capture from process listener, then supplements with screen scraping.
+     * Selects the more complete data source between dynamic capture (ProcessListener) and screen scrape.
      */
     public static String getWidgetContent(@NotNull Object widget) {
         String captured = getCapturedContent(widget);
-        LOG.debug("[Terminal] Dynamic capture length: " + captured.length());
-
-        // Supplement with screen scrape to ensure we get history
         String scraped = scrapeTerminalScreen(widget);
-        if (!scraped.isEmpty()) {
+
+        if (scraped.length() > captured.length()) {
+            LOG.debug("[Terminal] Using screen scrape (" + scraped.length()
+                    + " chars) over dynamic capture (" + captured.length() + " chars)");
             return scraped;
         }
 
-        LOG.debug("[Terminal] Falling back to dynamic capture (length: " + captured.length() + ")");
-        return captured;
+        if (!captured.isEmpty()) {
+            LOG.debug("[Terminal] Using dynamic capture (" + captured.length() + " chars)");
+            return captured;
+        }
+
+        LOG.debug("[Terminal] Using screen scrape as fallback (" + scraped.length() + " chars)");
+        return scraped;
     }
 
     /**
@@ -606,7 +611,7 @@ public class TerminalMonitorService implements ProjectActivity {
                 }
             }
         } catch (Exception e) {
-            // ignore individual line failures
+            LOG.debug("Failed to extract text from line " + lineIndex, e);
         }
         return null;
     }

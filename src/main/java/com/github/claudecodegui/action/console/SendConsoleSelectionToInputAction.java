@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -16,12 +17,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SendConsoleSelectionToInputAction extends AnAction implements DumbAware {
 
-    // Cache reflective Method lookup to avoid repeated getMethod() on EDT hot path
-    private static final Map<Class<?>, Method> EDITOR_METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final Logger LOG = Logger.getInstance(SendConsoleSelectionToInputAction.class);
+
+    // Cache reflective Method lookup to avoid repeated getMethod() on EDT hot path.
+    // Uses Optional to safely cache "not found" results (ConcurrentHashMap doesn't allow null values).
+    private static final Map<Class<?>, Optional<Method>> EDITOR_METHOD_CACHE = new ConcurrentHashMap<>();
 
     public SendConsoleSelectionToInputAction() {
         super(
@@ -79,26 +84,26 @@ public class SendConsoleSelectionToInputAction extends AnAction implements DumbA
     private static @Nullable Editor invokeGetEditor(@NotNull Object consoleView) {
         Class<?> clazz = consoleView.getClass();
         try {
-            Method method = EDITOR_METHOD_CACHE.computeIfAbsent(clazz, cls -> {
+            Optional<Method> cached = EDITOR_METHOD_CACHE.computeIfAbsent(clazz, cls -> {
                 try {
                     Method m = cls.getMethod("getEditor");
                     if (!Editor.class.isAssignableFrom(m.getReturnType())) {
-                        return null;
+                        return Optional.empty();
                     }
-                    return m;
+                    return Optional.of(m);
                 } catch (NoSuchMethodException e) {
-                    return null;
+                    return Optional.empty();
                 }
             });
-            if (method == null) {
+            if (!cached.isPresent()) {
                 return null;
             }
-            Object result = method.invoke(consoleView);
+            Object result = cached.get().invoke(consoleView);
             if (result instanceof Editor) {
                 return (Editor) result;
             }
-        } catch (ReflectiveOperationException ignored) {
-            // fallback silently
+        } catch (ReflectiveOperationException e) {
+            LOG.debug("Failed to invoke getEditor() via reflection on " + clazz.getName(), e);
         }
         return null;
     }
