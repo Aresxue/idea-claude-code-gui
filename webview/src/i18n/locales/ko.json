@@ -146,8 +146,16 @@
         "level6": "매우 크게 (140%)"
       },
       "editorFont": {
-        "label": "글꼴 (에디터 글꼴 따라감)",
-        "hint": "여기서 수정할 수 없습니다. 변경하려면 IDEA 설정 → Editor → Font로 이동하세요 (플러그인 글꼴 적용을 위해 IDEA 재시작 필요)"
+        "label": "글꼴",
+        "hint": "여기서는 플러그인 UI 글꼴을 변경합니다. 글자 크기와 줄 간격은 계속 에디터를 따릅니다.",
+        "followOption": "에디터 따라가기 ({{font}})",
+        "customOption": "사용자 지정 글꼴 파일",
+        "customPathLabel": "글꼴 파일 경로",
+        "customPathPlaceholder": ".ttf / .otf 글꼴 파일 경로를 선택하거나 입력하세요",
+        "browse": "찾아보기",
+        "warningUnavailable": "글꼴을 사용할 수 없어 현재 에디터 글꼴을 사용 중입니다",
+        "statusFollowEditor": "현재 에디터 글꼴 사용 중: {{font}}",
+        "statusCustom": "현재 사용자 지정 글꼴 사용 중: {{font}}"
       },
       "streaming": {
         "label": "스트리밍",

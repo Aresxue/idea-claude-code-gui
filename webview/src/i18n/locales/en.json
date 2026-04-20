@@ -146,8 +146,16 @@
         "level6": "Largest (140%)"
       },
       "editorFont": {
-        "label": "Font (follows editor font)",
-        "hint": "Not editable here. To modify, go to IDEA Settings → Editor → Font (restart IDEA for plugin font to take effect)"
+        "label": "Font",
+        "hint": "Font family changes apply immediately here. Font size and line spacing still follow the editor.",
+        "followOption": "Follow editor ({{font}})",
+        "customOption": "Custom font file",
+        "customPathLabel": "Font file path",
+        "customPathPlaceholder": "Choose or enter a .ttf / .otf font file path",
+        "browse": "Browse",
+        "warningUnavailable": "Font unavailable, currently using editor font",
+        "statusFollowEditor": "Currently following editor font: {{font}}",
+        "statusCustom": "Currently using custom font: {{font}}"
       },
       "streaming": {
         "label": "Streaming",

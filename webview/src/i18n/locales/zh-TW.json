@@ -146,8 +146,16 @@
         "level6": "最大（140%）"
       },
       "editorFont": {
-        "label": "字體（跟隨編輯器字體）",
-        "hint": "此處暫時不可修改，如需修改，請在 IDEA 設定 → 編輯器 → 字體 中調整（重啟 IDEA 後本外掛字體生效）"
+        "label": "字體",
+        "hint": "這裡修改的是外掛介面字體；字級和行高仍跟隨編輯器。",
+        "followOption": "跟隨編輯器（{{font}}）",
+        "customOption": "自訂字體檔案",
+        "customPathLabel": "字體檔案路徑",
+        "customPathPlaceholder": "選擇或輸入 .ttf / .otf 字體檔案路徑",
+        "browse": "瀏覽",
+        "warningUnavailable": "字體不可用，目前已回退到編輯器字體",
+        "statusFollowEditor": "目前跟隨編輯器字體：{{font}}",
+        "statusCustom": "目前使用自訂字體：{{font}}"
       },
       "streaming": {
         "label": "Streaming",

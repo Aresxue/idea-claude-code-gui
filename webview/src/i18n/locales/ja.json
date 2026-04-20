@@ -146,8 +146,16 @@
         "level6": "最大 (140%)"
       },
       "editorFont": {
-        "label": "フォント (エディタフォントに従う)",
-        "hint": "ここでは編集できません。変更するには、IDEA設定 → エディタ → フォントに移動してください(プラグインフォントを有効にするにはIDEAを再起動してください)"
+        "label": "フォント",
+        "hint": "ここではプラグインUIのフォントを変更します。文字サイズと行間は引き続きエディタに従います。",
+        "followOption": "エディタに従う ({{font}})",
+        "customOption": "カスタムフォントファイル",
+        "customPathLabel": "フォントファイルのパス",
+        "customPathPlaceholder": ".ttf / .otf フォントファイルのパスを選択または入力",
+        "browse": "参照",
+        "warningUnavailable": "フォントを利用できないため、現在はエディタフォントを使用しています",
+        "statusFollowEditor": "現在はエディタフォントを使用中: {{font}}",
+        "statusCustom": "現在はカスタムフォントを使用中: {{font}}"
       },
       "streaming": {
         "label": "Streaming",

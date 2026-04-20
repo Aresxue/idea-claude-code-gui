@@ -146,8 +146,16 @@
         "level6": "Maximale (140%)"
       },
       "editorFont": {
-        "label": "Police (suit la police de l'éditeur)",
-        "hint": "Non modifiable ici. Pour modifier, allez dans Paramètres IDEA → Éditeur → Police (redémarrez IDEA pour que la police du plugin prenne effet)"
+        "label": "Police",
+        "hint": "Ici vous changez la police de l'interface du plugin ; la taille et l'interligne suivent toujours l'éditeur.",
+        "followOption": "Suivre l'éditeur ({{font}})",
+        "customOption": "Fichier de police personnalisé",
+        "customPathLabel": "Chemin du fichier de police",
+        "customPathPlaceholder": "Choisissez ou saisissez le chemin d'un fichier .ttf / .otf",
+        "browse": "Parcourir",
+        "warningUnavailable": "La police est indisponible, la police de l'éditeur est utilisée",
+        "statusFollowEditor": "Police actuelle de l'éditeur : {{font}}",
+        "statusCustom": "Police personnalisée actuellement utilisée : {{font}}"
       },
       "streaming": {
         "label": "Streaming",

@@ -146,8 +146,16 @@
         "level6": "Muito Grande (140%)"
       },
       "editorFont": {
-        "label": "Fonte (segue a fonte do editor)",
-        "hint": "Não editável aqui. Para modificar, vá em Configurações do IDEA → Editor → Fonte (reinicie o IDEA para que a fonte do plugin entre em vigor)"
+        "label": "Fonte",
+        "hint": "Aqui você altera a fonte da interface do plugin; o tamanho e o espaçamento entre linhas continuam seguindo o editor.",
+        "followOption": "Seguir editor ({{font}})",
+        "customOption": "Arquivo de fonte personalizado",
+        "customPathLabel": "Caminho do arquivo de fonte",
+        "customPathPlaceholder": "Escolha ou digite o caminho de um arquivo .ttf / .otf",
+        "browse": "Procurar",
+        "warningUnavailable": "A fonte está indisponível, usando a fonte do editor",
+        "statusFollowEditor": "Usando atualmente a fonte do editor: {{font}}",
+        "statusCustom": "Usando atualmente a fonte personalizada: {{font}}"
       },
       "streaming": {
         "label": "Streaming",

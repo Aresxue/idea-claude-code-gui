@@ -372,6 +372,16 @@ interface Window {
   };
 
   /**
+   * Apply effective plugin UI font configuration (called from Java backend)
+   */
+  applyUiFontConfig?: (config: import('./types/uiFontConfig').UiFontConfig | string) => void;
+
+  /**
+   * Pending effective UI font config before applyUiFontConfig is registered
+   */
+  __pendingUiFontConfig?: import('./types/uiFontConfig').UiFontConfig;
+
+  /**
    * Apply IDEA language configuration (called from Java backend)
    * @param config Language configuration object containing language code and IDEA locale
    */
@@ -402,6 +412,11 @@ interface Window {
    * Editor font config received callback - receives IDEA editor font configuration
    */
   onEditorFontConfigReceived?: (json: string) => void;
+
+  /**
+   * Effective UI font config received callback
+   */
+  onUiFontConfigReceived?: (json: string) => void;
 
   /**
    * IDE theme received callback - receives IDE theme configuration
