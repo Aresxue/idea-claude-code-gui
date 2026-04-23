@@ -220,7 +220,7 @@ async function buildRequestContext(params, withAttachments, overrides = {}) {
 
   const userMessage = await buildUserMessage(params, withAttachments, requestedSessionId, resolvedModelId);
 
-  const runtimeSignature = buildRuntimeSignature(options, systemPromptAppend, streamingEnabled, runtimeSessionEpoch);
+  const runtimeSignature = buildRuntimeSignature(options, systemPromptAppend, streamingEnabled, runtimeSessionEpoch, modelId);
   console.log('[LIFECYCLE] buildRequestContext sessionId=' + (requestedSessionId || '(new)')
     + ' epoch=' + (runtimeSessionEpoch || '(none)')
     + ' signature=' + runtimeSignature);

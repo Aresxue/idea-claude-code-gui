@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTurnSink } from './runtime-lifecycle.js';
+import { buildRuntimeSignature, applyDynamicControls, createTurnSink } from './runtime-lifecycle.js';
+import { __testing } from './persistent-query-service.js';
 
 // ============================================================================
 // TurnSink Tests - Core Message Queue Functionality
@@ -459,6 +460,162 @@ test('Memory: failed sink releases waiting promises', async () => {
 
   assert.equal(results.length, 100);
   results.forEach(r => assert.equal(r.status, 'rejected'));
+});
+
+// ============================================================================
+// Runtime Signature & Dynamic Controls - 1M Context Toggle
+// ============================================================================
+
+/**
+ * Create a fake SDK query whose message iterator is a REAL native async
+ * generator, mirroring the SDK's readSdkMessages(). It pends until close()
+ * is called (the real iterator stays open between turns), so the perpetual
+ * reader neither spins nor tears the runtime down mid-test.
+ */
+function createHangingQuery({ prompt, options }) {
+  let closeResolve;
+  const closedSignal = new Promise((resolve) => { closeResolve = resolve; });
+  async function* messages() {
+    await closedSignal;
+  }
+  const generator = messages();
+  return {
+    prompt,
+    options,
+    closed: false,
+    setPermissionMode: async () => {},
+    setModel: async () => {},
+    setMaxThinkingTokens: async () => {},
+    close() {
+      this.closed = true;
+      closeResolve();
+    },
+    next: () => generator.next(),
+  };
+}
+
+test('buildRuntimeSignature differs when the [1m] context suffix toggles', () => {
+  const options = { cwd: '/tmp/project', model: 'sonnet' };
+  const sigOff = buildRuntimeSignature(options, '', true, 'epoch-x', 'claude-sonnet-4-6');
+  const sigOn = buildRuntimeSignature(options, '', true, 'epoch-x', 'claude-sonnet-4-6[1m]');
+
+  assert.notEqual(sigOff, sigOn);
+  assert.match(sigOff, /"contextWindow1M":false/);
+  assert.match(sigOn, /"contextWindow1M":true/);
+});
+
+test('buildRuntimeSignature is stable for the same [1m] state', () => {
+  const options = { cwd: '/tmp/project', model: 'sonnet' };
+  const a = buildRuntimeSignature(options, '', true, 'epoch-x', 'claude-sonnet-4-6[1m]');
+  const b = buildRuntimeSignature(options, '', true, 'epoch-x', 'claude-sonnet-4-6[1m]');
+  assert.equal(a, b);
+});
+
+test('applyDynamicControls passes the resolved model id to setModel, not the short name', async () => {
+  // The CLI subprocess resolves short names ("sonnet") against its own env,
+  // which was frozen at spawn — a daemon-side env update never reaches it.
+  // The resolved id must therefore be sent verbatim.
+  const setModelCalls = [];
+  const runtime = {
+    closed: false,
+    currentPermissionMode: 'default',
+    currentModel: 'sonnet',
+    currentResolvedModel: 'claude-sonnet-4-6',
+    currentMaxThinkingTokens: null,
+    query: {
+      setModel: async (model) => { setModelCalls.push(model); },
+    },
+  };
+
+  await applyDynamicControls(runtime, {
+    permissionMode: 'default',
+    sdkModelName: 'sonnet',
+    resolvedModelId: 'MiniMax-M2.5',
+    maxThinkingTokens: null,
+  });
+
+  assert.deepEqual(setModelCalls, ['MiniMax-M2.5']);
+  assert.equal(runtime.currentModel, 'sonnet');
+  assert.equal(runtime.currentResolvedModel, 'MiniMax-M2.5');
+});
+
+test('applyDynamicControls skips setModel when short name and resolved id are unchanged', async () => {
+  const setModelCalls = [];
+  const runtime = {
+    closed: false,
+    currentPermissionMode: 'default',
+    currentModel: 'sonnet',
+    currentResolvedModel: 'claude-sonnet-4-6',
+    currentMaxThinkingTokens: null,
+    query: {
+      setModel: async (model) => { setModelCalls.push(model); },
+    },
+  };
+
+  await applyDynamicControls(runtime, {
+    permissionMode: 'default',
+    sdkModelName: 'sonnet',
+    resolvedModelId: 'claude-sonnet-4-6',
+    maxThinkingTokens: null,
+  });
+
+  assert.deepEqual(setModelCalls, []);
+});
+
+test('acquireRuntime rebuilds the runtime when the [1m] context toggle changes', async (t) => {
+  t.after(async () => {
+    await __testing.resetState();
+  });
+  let created = 0;
+  __testing.setQueryFn((args) => {
+    created += 1;
+    return createHangingQuery(args);
+  });
+
+  const baseParams = {
+    sessionId: '',
+    runtimeSessionEpoch: 'epoch-1m-toggle',
+    cwd: process.cwd(),
+    message: 'hello',
+  };
+  // Settings override keeps the resolved model deterministic regardless of the
+  // developer's real ~/.claude/settings.json.
+  const overrides = { settings: { env: {} } };
+
+  const ctxOff = await __testing.buildRequestContext(
+    { ...baseParams, model: 'claude-sonnet-4-6' }, false, overrides
+  );
+  const runtimeOff = await __testing.acquireRuntime(ctxOff);
+  const runtimeOffAgain = await __testing.acquireRuntime(ctxOff);
+  assert.equal(runtimeOff, runtimeOffAgain, 'same [1m] state must reuse the runtime');
+  assert.equal(created, 1);
+
+  const ctxOn = await __testing.buildRequestContext(
+    { ...baseParams, model: 'claude-sonnet-4-6[1m]' }, false, overrides
+  );
+  const runtimeOn = await __testing.acquireRuntime(ctxOn);
+  assert.notEqual(runtimeOff, runtimeOn, 'toggling [1m] on must build a runtime with a 1M window');
+  assert.equal(created, 2);
+
+  // The subprocess env is frozen at spawn — verify each runtime was spawned
+  // with the context window it serves. This is the end-to-end guarantee that
+  // the CLI resolves "sonnet" to the right window for its runtime.
+  const envOff = runtimeOff.query?.options?.env || {};
+  const envOn = runtimeOn.query?.options?.env || {};
+  assert.doesNotMatch(String(envOff.ANTHROPIC_DEFAULT_SONNET_MODEL || ''), /\[1m\]/,
+    'non-1M runtime must be spawned without the [1m] suffix in its env');
+  assert.match(String(envOn.ANTHROPIC_DEFAULT_SONNET_MODEL || ''), /\[1m\]$/,
+    '1M runtime must be spawned with the [1m] suffix in its env');
+
+  // Toggling back off routes to the still-alive non-1M runtime: anonymous
+  // runtimes are keyed by signature, and the old runtime's frozen env matches
+  // the requested window again, so reuse is correct (no rebuild needed).
+  const ctxOffAgain = await __testing.buildRequestContext(
+    { ...baseParams, model: 'claude-sonnet-4-6' }, false, overrides
+  );
+  const runtimeOff2 = await __testing.acquireRuntime(ctxOffAgain);
+  assert.equal(runtimeOff2, runtimeOff, 'toggling back off must route to the non-1M runtime');
+  assert.equal(created, 2);
 });
 
 console.log('\n✅ All TurnSink tests defined. Run with: node runtime-lifecycle.test.js');

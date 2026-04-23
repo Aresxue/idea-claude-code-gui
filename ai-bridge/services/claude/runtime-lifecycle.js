@@ -83,7 +83,7 @@ export function createTurnSink() {
   };
 }
 
-export function buildRuntimeSignature(options, systemPromptAppend, streamingEnabled, runtimeSessionEpoch) {
+export function buildRuntimeSignature(options, systemPromptAppend, streamingEnabled, runtimeSessionEpoch, modelId) {
   const material = {
     cwd: options.cwd || '',
     additionalDirectories: options.additionalDirectories || [],
@@ -91,7 +91,12 @@ export function buildRuntimeSignature(options, systemPromptAppend, streamingEnab
     streamingEnabled: !!streamingEnabled,
     runtimeSessionEpoch: runtimeSessionEpoch || '',
     model: options.model || '',
-    effort: options.effort || ''
+    effort: options.effort || '',
+    // The [1m] suffix selects the 1M context window. The CLI subprocess locks
+    // the window in at spawn from its environment, and setModel() cannot change
+    // it afterwards (see shouldRecreateRuntimeForModel) — so toggling [1m] must
+    // change the signature and rebuild the runtime instead of reusing it.
+    contextWindow1M: (modelId || '').includes('[1m]')
   };
   return JSON.stringify(material);
 }
@@ -154,6 +159,7 @@ async function createRuntime(requestContext, callbacks) {
     runtimeSignature: requestContext.runtimeSignature,
     currentModel: requestContext.sdkModelName || null,
     modelId: requestContext.modelId || null, // Original model ID, may contain [1m] suffix
+    currentResolvedModel: requestContext.resolvedModelId || null,
     currentPermissionMode: initialPermissionMode,
     permissionModeState: { value: initialPermissionMode },
     currentMaxThinkingTokens: requestContext.maxThinkingTokens ?? null,
@@ -377,10 +383,21 @@ async function applyDynamicControls(runtime, requestContext) {
   }
 
   const targetModel = requestContext.sdkModelName || null;
-  if (runtime.currentModel !== targetModel && typeof runtime.query?.setModel === 'function') {
+  const targetResolvedModel = requestContext.resolvedModelId || null;
+  // Compare both the SDK short name AND the resolved model ID: a settings-side
+  // remap (e.g. sonnet -> "MiniMax-M2.5") changes only the resolved ID.
+  // Pass the resolved ID to setModel, not the short name: the CLI subprocess
+  // resolves short names against its OWN environment, which was frozen at spawn
+  // time — the daemon-side env update in setModelEnvironmentVariables never
+  // reaches a live subprocess. The resolved ID needs no env lookup. ([1m]
+  // toggles never get here: they change the runtime signature, so acquireRuntime
+  // rebuilds the runtime instead of reusing it.)
+  if ((runtime.currentModel !== targetModel || runtime.currentResolvedModel !== targetResolvedModel)
+      && typeof runtime.query?.setModel === 'function') {
     try {
-      await runtime.query.setModel(targetModel || undefined);
+      await runtime.query.setModel(targetResolvedModel || targetModel || undefined);
       runtime.currentModel = targetModel;
+      runtime.currentResolvedModel = targetResolvedModel;
     } catch (error) {
       console.error('[DAEMON] setModel failed:', error.message);
     }
