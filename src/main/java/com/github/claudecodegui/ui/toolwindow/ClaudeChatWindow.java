@@ -535,6 +535,10 @@ public class ClaudeChatWindow {
     // ==================== Session Delegates ====================
 
     private void setupSessionCallbacks() {
+        // Reset sessionId when callbacks are re-bound (e.g., on new session creation),
+        // so stale session IDs are not exposed via getSessionId() between sessions.
+        this.sessionId = null;
+
         if (this.sessionCallbackAdapter != null) {
             this.sessionCallbackAdapter.deactivate();
         }
@@ -645,6 +649,13 @@ public class ClaudeChatWindow {
 
         int tabIndex = getTabIndex();
         if (tabIndex < 0) {
+            return;
+        }
+
+        // Skip persisting null/empty sessionId for new sessions
+        // so the TabStateService preserves the last valid session binding.
+        String currentSessionId = session.getSessionId();
+        if (currentSessionId == null || currentSessionId.trim().isEmpty()) {
             return;
         }
 
