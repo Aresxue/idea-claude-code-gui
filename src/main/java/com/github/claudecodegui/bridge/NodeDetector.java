@@ -571,6 +571,53 @@ public class NodeDetector {
                 && path.charAt(0) == '/';
     }
 
+    /** Cached result of {@link #resolveWslHomeUncPath()} — populated on first call. */
+    private static volatile String cachedWslHomeUncPath = null;
+
+    /**
+     * Returns the Windows UNC path to the WSL user's home directory
+     * (e.g. {@code \\wsl.localhost\Ubuntu\home\gazoon007}).
+     *
+     * <p>This is obtained by running {@code wsl wslpath -w $HOME} and caching the result.
+     * The UNC form lets the Windows JVM access the WSL filesystem directly via
+     * {@link java.nio.file.Files} operations, while {@link #convertToWslPath} on the same
+     * UNC path recovers the native Linux path needed for subprocess arguments.
+     *
+     * <p>Returns {@code null} if not on Windows, if WSL is unavailable, or if the command fails.
+     */
+    public static String resolveWslHomeUncPath() {
+        if (!PlatformUtils.isWindows()) {
+            return null;
+        }
+        if (cachedWslHomeUncPath != null) {
+            return cachedWslHomeUncPath;
+        }
+        synchronized (NodeDetector.class) {
+            if (cachedWslHomeUncPath != null) {
+                return cachedWslHomeUncPath;
+            }
+            try {
+                ProcessBuilder pb = new ProcessBuilder("wsl", "sh", "-c", "wslpath -w $HOME");
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                String line = null;
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                    line = reader.readLine();
+                }
+                boolean finished = process.waitFor(5, TimeUnit.SECONDS);
+                if (finished && process.exitValue() == 0
+                        && line != null && line.trim().startsWith("\\\\")) {
+                    cachedWslHomeUncPath = line.trim();
+                    LOG.info("[NodeDetector] Resolved WSL home UNC path: " + cachedWslHomeUncPath);
+                }
+            } catch (Exception e) {
+                LOG.warn("[NodeDetector] Failed to resolve WSL home UNC path: " + e.getMessage());
+            }
+        }
+        return cachedWslHomeUncPath;
+    }
+
     /**
      * Builds the base of a WSL-aware command list for running a Node.js script file.
      * When {@code nodePath} is a WSL path, prepends {@code "wsl"} and converts
@@ -666,6 +713,22 @@ public class NodeDetector {
         }
         // Fallback: just replace backslashes
         return windowsPath.replace('\\', '/');
+    }
+
+    /**
+     * Converts {@code path} to a form safe for embedding inside an inline Node.js script string.
+     * <ul>
+     *   <li>When {@code nodePath} is a WSL path, {@link #convertToWslPath(String)} produces a
+     *       Unix path that needs no further escaping.</li>
+     *   <li>Otherwise, backslashes are doubled so the path is a valid JS string literal.</li>
+     * </ul>
+     *
+     * @param nodePath the Node.js executable path (used to detect WSL context)
+     * @param path     the path to convert
+     * @return path ready for embedding in inline JS
+     */
+    public static String resolveScriptPath(String nodePath, String path) {
+        return isWslPath(nodePath) ? convertToWslPath(path) : path.replace("\\", "\\\\");
     }
 
     /**

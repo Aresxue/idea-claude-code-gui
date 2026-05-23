@@ -1,5 +1,6 @@
 package com.github.claudecodegui.handler;
 
+import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.handler.core.HandlerContext;
 
 import com.intellij.openapi.application.ApplicationManager;
@@ -103,6 +104,7 @@ public class InputHistoryHandler {
         String bridgePath = context.getClaudeSDKBridge().getSdkTestDir().getAbsolutePath();
         String nodePath = context.getClaudeSDKBridge().getNodeExecutable();
 
+        String scriptBridgePath = NodeDetector.resolveScriptPath(nodePath, bridgePath);
         String nodeScript;
         if (param == null || param.isEmpty()) {
             // Call without parameters
@@ -111,7 +113,7 @@ public class InputHistoryHandler {
                 "const result = %s(); " +
                 "console.log(JSON.stringify(result));",
                 functionName,
-                bridgePath.replace("\\", "\\\\"),
+                scriptBridgePath,
                 functionName
             );
             return executeNodeScript(nodePath, nodeScript, null);
@@ -132,7 +134,7 @@ public class InputHistoryHandler {
                 "  } " +
                 "});",
                 functionName,
-                bridgePath.replace("\\", "\\\\"),
+                scriptBridgePath,
                 functionName
             );
             return executeNodeScript(nodePath, nodeScript, param);
@@ -146,6 +148,7 @@ public class InputHistoryHandler {
         String bridgePath = context.getClaudeSDKBridge().getSdkTestDir().getAbsolutePath();
         String nodePath = context.getClaudeSDKBridge().getNodeExecutable();
 
+        String scriptBridgePath = NodeDetector.resolveScriptPath(nodePath, bridgePath);
         // Use stdin to pass JSON data, avoiding shell escaping issues with special characters
         String nodeScript = String.format(
             "const { %s } = require('%s/services/input-history-service.cjs'); " +
@@ -162,7 +165,7 @@ public class InputHistoryHandler {
             "  } " +
             "});",
             functionName,
-            bridgePath.replace("\\", "\\\\"),
+            scriptBridgePath,
             functionName
         );
 
@@ -179,7 +182,7 @@ public class InputHistoryHandler {
      * @return the last non-empty line of stdout
      */
     private String executeNodeScript(String nodePath, String nodeScript, String stdinData) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(nodePath, "-e", nodeScript);
+        ProcessBuilder pb = new ProcessBuilder(NodeDetector.buildNodeInlineCommand(nodePath, nodeScript));
         pb.redirectErrorStream(true);
 
         Process process = pb.start();

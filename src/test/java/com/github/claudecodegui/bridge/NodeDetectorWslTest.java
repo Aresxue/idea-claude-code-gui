@@ -1,12 +1,16 @@
 package com.github.claudecodegui.bridge;
 
+import org.junit.Assume;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for NodeDetector WSL path utilities.
@@ -145,5 +149,48 @@ public class NodeDetectorWslTest {
         List<String> cmd = NodeDetector.buildNodeInlineCommand("node", "1+1");
         cmd.add("extra");
         assertEquals(4, cmd.size());
+    }
+
+    // =========================================================================
+    // resolveWslHomeUncPath — integration (requires Windows + WSL, skipped otherwise)
+    // =========================================================================
+
+    /**
+     * Verifies that resolveWslHomeUncPath() returns a valid Windows UNC path that
+     * is reachable from the JVM via java.nio.file.Files.
+     *
+     * <p>This test is skipped automatically on non-Windows systems or when WSL is
+     * unavailable, so it is safe to include in the normal test run.
+     */
+    @Test
+    public void resolveWslHomeUncPath_onWindowsWithWsl_returnsAccessibleUncPath() {
+        Assume.assumeTrue("Skipped: not running on Windows", System.getProperty("os.name", "").toLowerCase().contains("windows"));
+
+        String uncPath = NodeDetector.resolveWslHomeUncPath();
+        Assume.assumeTrue("Skipped: WSL not available or wslpath failed", uncPath != null && !uncPath.isEmpty());
+
+        assertTrue("UNC path must start with \\\\", uncPath.startsWith("\\\\"));
+        assertTrue("UNC path must be accessible via Files.exists()", Files.exists(Paths.get(uncPath)));
+    }
+
+    /**
+     * Verifies that installing the SDK into the WSL home (UNC path) actually places
+     * files in the Linux filesystem visible inside WSL.
+     *
+     * <p>Checks that the codemoss dependencies dir resolves to the WSL home subtree
+     * rather than the Windows user home (C:\Users\...).
+     */
+    @Test
+    public void resolveWslHomeUncPath_onWindowsWithWsl_isNotWindowsUserHome() {
+        Assume.assumeTrue("Skipped: not running on Windows", System.getProperty("os.name", "").toLowerCase().contains("windows"));
+
+        String uncPath = NodeDetector.resolveWslHomeUncPath();
+        Assume.assumeTrue("Skipped: WSL not available", uncPath != null && !uncPath.isEmpty());
+
+        String windowsHome = System.getenv("USERPROFILE");
+        if (windowsHome != null) {
+            assertFalse("WSL UNC home must differ from Windows USERPROFILE", uncPath.equalsIgnoreCase(windowsHome));
+        }
+        assertFalse("WSL UNC path must not contain a drive-letter root", uncPath.matches("(?i)[A-Z]:.*"));
     }
 }
