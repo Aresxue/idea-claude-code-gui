@@ -5,6 +5,7 @@ import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.bridge.ProcessManager;
 import com.github.claudecodegui.provider.common.MessageCallback;
 import com.github.claudecodegui.provider.common.SDKResult;
+import com.github.claudecodegui.util.PlatformUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -15,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -190,9 +192,15 @@ class ClaudeQueryExecutor {
                 envConfigurator.updateProcessEnvironment(pb, node);
                 env.put("CLAUDE_USE_STDIN", "true");
 
+                // L3 fix: Without ProcessManager registration, this child was invisible
+                // to cleanupAllProcesses on IDE shutdown — every stalled stream query
+                // leaked a node process. We now register before any I/O and unregister
+                // in the finally block, with force-kill as the last-resort cleanup.
+                String channelId = "claude-query-stream-" + UUID.randomUUID();
                 Process process = null;
                 try {
                     process = pb.start();
+                    processManager.registerProcess(channelId, process);
                     ClaudeBridgeUtils.writeStdin(stdinJson, process);
 
                     try (BufferedReader reader = new BufferedReader(
@@ -267,7 +275,17 @@ class ClaudeQueryExecutor {
                         }
                     }
                 } finally {
-                    processManager.waitForProcessTermination(process);
+                    if (process != null) {
+                        processManager.unregisterProcess(channelId, process);
+                        processManager.waitForProcessTermination(process);
+                        // Last-resort: if the child still hasn't exited (e.g. Node SDK
+                        // stuck on a network read), force-kill so it does not outlive
+                        // the request. Matches the cleanup guarantee enforced by
+                        // ProcessManager.interruptChannel for the cancellation path.
+                        if (process.isAlive()) {
+                            PlatformUtils.terminateProcess(process);
+                        }
+                    }
                 }
             } catch (Exception e) {
                 result.success = false;
