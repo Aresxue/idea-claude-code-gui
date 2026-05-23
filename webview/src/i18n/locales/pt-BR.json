@@ -90,6 +90,17 @@
     "streamingConnected": "{{provider}} conectado, entendendo sua pergunta",
     "showEarlierMessages": "Mostrar {{count}} mensagens anteriores",
     "totalDuration": "Esta resposta levou",
+    "search": {
+      "ariaLabel": "Pesquisar na conversa",
+      "placeholder": "Pesquisar na conversa…",
+      "next": "Próxima correspondência (Enter)",
+      "previous": "Correspondência anterior (Shift+Enter)",
+      "close": "Fechar (Esc)",
+      "counter": "{{current}}/{{total}}",
+      "noResults": "Sem resultados",
+      "searching": "Pesquisando…",
+      "expandedHint": "{{count}} mensagens anteriores expandidas"
+    },
     "compactSummary": {
       "summarizedConversation": "Conversa resumida",
       "compactSummary": "Resumo compacto",

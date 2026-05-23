@@ -90,6 +90,17 @@
     "streamingConnected": "{{provider}} connected, understanding your question",
     "showEarlierMessages": "Show {{count}} earlier messages",
     "totalDuration": "This reply took",
+    "search": {
+      "ariaLabel": "Search in conversation",
+      "placeholder": "Search in conversation…",
+      "next": "Next match (Enter)",
+      "previous": "Previous match (Shift+Enter)",
+      "close": "Close (Esc)",
+      "counter": "{{current}}/{{total}}",
+      "noResults": "No results",
+      "searching": "Searching…",
+      "expandedHint": "Expanded {{count}} earlier messages"
+    },
     "compactSummary": {
       "summarizedConversation": "Summarized conversation",
       "compactSummary": "Compact summary",

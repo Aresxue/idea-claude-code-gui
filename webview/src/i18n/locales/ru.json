@@ -90,6 +90,17 @@
     "streamingConnected": "{{provider}} обрабатывает запрос",
     "showEarlierMessages": "Показать предыдущие сообщения ({{count}})",
     "totalDuration": "Этот ответ занял",
+    "search": {
+      "ariaLabel": "Поиск в беседе",
+      "placeholder": "Поиск в беседе…",
+      "next": "Следующее совпадение (Enter)",
+      "previous": "Предыдущее совпадение (Shift+Enter)",
+      "close": "Закрыть (Esc)",
+      "counter": "{{current}}/{{total}}",
+      "noResults": "Нет результатов",
+      "searching": "Поиск…",
+      "expandedHint": "Развёрнуто {{count}} ранних сообщений"
+    },
     "compactSummary": {
       "summarizedConversation": "Сводка беседы",
       "compactSummary": "Краткое резюме",

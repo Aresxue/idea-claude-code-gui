@@ -90,6 +90,17 @@
     "streamingConnected": "{{provider}} 已成功连接，正在理解问题",
     "showEarlierMessages": "显示之前的 {{count}} 条消息",
     "totalDuration": "本次耗时",
+    "search": {
+      "ariaLabel": "在对话中搜索",
+      "placeholder": "在对话中搜索…",
+      "next": "下一个匹配 (Enter)",
+      "previous": "上一个匹配 (Shift+Enter)",
+      "close": "关闭 (Esc)",
+      "counter": "{{current}}/{{total}}",
+      "noResults": "无结果",
+      "searching": "搜索中…",
+      "expandedHint": "已展开 {{count}} 条早期消息"
+    },
     "compactSummary": {
       "summarizedConversation": "已总结的对话",
       "compactSummary": "对话摘要",

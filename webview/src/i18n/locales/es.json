@@ -90,6 +90,17 @@
     "streamingConnected": "{{provider}} conectado, entendiendo tu pregunta",
     "showEarlierMessages": "Mostrar {{count}} mensajes anteriores",
     "totalDuration": "Esta respuesta tardó",
+    "search": {
+      "ariaLabel": "Buscar en la conversación",
+      "placeholder": "Buscar en la conversación…",
+      "next": "Siguiente coincidencia (Enter)",
+      "previous": "Coincidencia anterior (Mayús+Enter)",
+      "close": "Cerrar (Esc)",
+      "counter": "{{current}}/{{total}}",
+      "noResults": "Sin resultados",
+      "searching": "Buscando…",
+      "expandedHint": "{{count}} mensajes anteriores expandidos"
+    },
     "compactSummary": {
       "summarizedConversation": "Conversación resumida",
       "compactSummary": "Resumen compacto",
