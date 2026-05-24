@@ -176,6 +176,11 @@ interface Window {
   insertCodeSnippetAtCursor?: (selectionInfo: string) => void;
 
   /**
+   * Focus the chat input box - registered by ChatInputBox
+   */
+  focusChatInput?: () => void;
+
+  /**
    * Clear selection info
    */
   clearSelectionInfo?: () => void;

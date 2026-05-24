@@ -1,6 +1,7 @@
 package com.github.claudecodegui.action.editor;
 
 import com.github.claudecodegui.i18n.ClaudeCodeGuiBundle;
+import com.github.claudecodegui.ui.toolwindow.ClaudeChatWindow;
 import com.github.claudecodegui.ui.toolwindow.ClaudeSDKToolWindow;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -199,13 +200,19 @@ public class SendSelectionToTerminalAction extends AnAction implements DumbAware
     }
 
     /**
-     * Activate the CCG tool window without sending any content.
+     * Activate the CCG tool window and focus the input field.
      */
     private void activateToolWindow(@NotNull Project project) {
         ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
         ToolWindow toolWindow = toolWindowManager.getToolWindow("CCG");
-        if (toolWindow != null) {
-            toolWindow.activate(null, true);
+        if (toolWindow == null) {
+            return;
         }
+        toolWindow.activate(() -> {
+            ClaudeChatWindow chatWindow = ClaudeSDKToolWindow.getChatWindow(project);
+            if (chatWindow != null && !chatWindow.isDisposed()) {
+                chatWindow.focusInputPane();
+            }
+        }, true);
     }
 }

@@ -679,6 +679,18 @@ public class ClaudeChatWindow {
         }
     }
 
+    /**
+     * Focus the chat input field in the frontend.
+     * Called when Ctrl+Alt+K activates the panel without a selection.
+     */
+    public void focusInputPane() {
+        if (disposed || browser == null) {
+            return;
+        }
+        browser.getComponent().requestFocus();
+        executeJavaScriptCode("window.focusChatInput?.()");
+    }
+
     // ==================== Dispose ====================
 
     public synchronized void dispose() {
