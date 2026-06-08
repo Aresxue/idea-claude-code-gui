@@ -85,7 +85,8 @@ public class SessionSendService {
             JsonObject openedFilesJson,
             String externalAgentPrompt,
             List<String> fileTagPaths,
-            String requestedPermissionMode
+            String requestedPermissionMode,
+            String requestedReasoningEffort
     ) {
         String agentPrompt = externalAgentPrompt;
         if (agentPrompt == null) {
@@ -111,6 +112,8 @@ public class SessionSendService {
                         + ", effective=" + effectivePermissionMode
         );
 
+        String normalizedRequestedEffort = normalizeRequestedReasoningEffort(requestedReasoningEffort);
+
         if ("codex".equals(currentProvider)) {
             return sendToCodex(
                     channelId,
@@ -119,11 +122,28 @@ public class SessionSendService {
                     openedFilesJson,
                     agentPrompt,
                     fileTagPaths,
-                    effectivePermissionMode
+                    effectivePermissionMode,
+                    normalizedRequestedEffort
             );
         }
 
-        return sendToClaude(channelId, input, attachments, openedFilesJson, agentPrompt, effectivePermissionMode);
+        return sendToClaude(channelId, input, attachments, openedFilesJson, agentPrompt,
+                effectivePermissionMode, normalizedRequestedEffort);
+    }
+
+    public static String normalizeRequestedReasoningEffort(String effort) {
+        if (effort == null) {
+            return null;
+        }
+        String trimmed = effort.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (SessionState.isValidReasoningEffort(trimmed)) {
+            return trimmed;
+        }
+        LOG.warn("[ReasoningEffort][Backend] Invalid requested reasoningEffort ignored: " + effort);
+        return null;
     }
 
     public static String normalizeRequestedPermissionMode(String mode) {
@@ -171,7 +191,8 @@ public class SessionSendService {
             JsonObject openedFilesJson,
             String agentPrompt,
             List<String> fileTagPaths,
-            String effectivePermissionMode
+            String effectivePermissionMode,
+            String requestedReasoningEffort
     ) {
         CodexMessageHandler handler = new CodexMessageHandler(state, callbackFacade.getCallbackHandler());
         String accessMode = CodemossSettingsService.CODEX_RUNTIME_ACCESS_INACTIVE;
@@ -199,7 +220,7 @@ public class SessionSendService {
                 effectivePermissionMode,
                 state.getModel(),
                 agentPrompt,
-                state.getReasoningEffort(),
+                requestedReasoningEffort != null ? requestedReasoningEffort : state.getReasoningEffort(),
                 handler
         ).thenApply(result -> null);
     }
@@ -210,7 +231,8 @@ public class SessionSendService {
             List<ClaudeSession.Attachment> attachments,
             JsonObject openedFilesJson,
             String agentPrompt,
-            String effectivePermissionMode
+            String effectivePermissionMode,
+            String requestedReasoningEffort
     ) {
         ClaudeMessageHandler handler = new ClaudeMessageHandler(
                 project,
@@ -242,7 +264,7 @@ public class SessionSendService {
                         agentPrompt,
                         streaming,
                         false,
-                        state.getReasoningEffort(),
+                        requestedReasoningEffort != null ? requestedReasoningEffort : state.getReasoningEffort(),
                         handler
                 ).thenApply(result -> null);
     }

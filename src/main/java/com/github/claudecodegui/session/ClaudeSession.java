@@ -356,7 +356,21 @@ public class ClaudeSession {
      * requestedPermissionMode priority: payload > sessionMode > default.
      */
     public CompletableFuture<Void> send(String input, String agentPrompt, List<String> fileTagPaths, String requestedPermissionMode) {
-        return send(input, null, agentPrompt, fileTagPaths, requestedPermissionMode);
+        return send(input, null, agentPrompt, fileTagPaths, requestedPermissionMode, null);
+    }
+
+    /**
+     * Send a message with a specific agent prompt, file tags, requested permission mode,
+     * and requested reasoning effort.
+     */
+    public CompletableFuture<Void> send(
+            String input,
+            String agentPrompt,
+            List<String> fileTagPaths,
+            String requestedPermissionMode,
+            String requestedReasoningEffort
+    ) {
+        return send(input, null, agentPrompt, fileTagPaths, requestedPermissionMode, requestedReasoningEffort);
     }
 
     /**
@@ -406,6 +420,23 @@ public class ClaudeSession {
             List<String> fileTagPaths,
             String requestedPermissionMode
     ) {
+        return send(input, attachments, agentPrompt, fileTagPaths, requestedPermissionMode, null);
+    }
+
+    /**
+     * Send a message with attachments, agent prompt, file tags, requested permission mode,
+     * and requested reasoning effort.
+     * The effective mode is resolved with priority:
+     * Priority: requestedPermissionMode > sessionMode > default.
+     */
+    public CompletableFuture<Void> send(
+            String input,
+            List<Attachment> attachments,
+            String agentPrompt,
+            List<String> fileTagPaths,
+            String requestedPermissionMode,
+            String requestedReasoningEffort
+    ) {
         String normalizedInput = (input != null) ? input.trim() : "";
         Message userMessage = contextService.buildUserMessage(normalizedInput, attachments);
         sendService.updateSessionStateForSend(userMessage, normalizedInput);
@@ -413,6 +444,7 @@ public class ClaudeSession {
         final String finalAgentPrompt = agentPrompt;
         final List<String> finalFileTagPaths = fileTagPaths;
         final String finalRequestedPermissionMode = requestedPermissionMode;
+        final String finalRequestedReasoningEffort = requestedReasoningEffort;
 
         return launchClaude().thenCompose(chId -> {
             sendService.prepareContextCollector(contextCollector);
@@ -425,7 +457,8 @@ public class ClaudeSession {
                             openedFilesJson,
                             finalAgentPrompt,
                             finalFileTagPaths,
-                            finalRequestedPermissionMode
+                            finalRequestedPermissionMode,
+                            finalRequestedReasoningEffort
                     )
             ).thenCompose(v -> syncUserMessageUuidsAfterSend());
         }).exceptionally(ex -> {

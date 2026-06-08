@@ -35,6 +35,16 @@ public class SessionSendServiceTest {
     }
 
     @Test
+    public void normalizeRequestedReasoningEffortRejectsBlankAndUnknownValues() {
+        assertNull(SessionSendService.normalizeRequestedReasoningEffort(null));
+        assertNull(SessionSendService.normalizeRequestedReasoningEffort(" "));
+        assertNull(SessionSendService.normalizeRequestedReasoningEffort("extreme"));
+        assertEquals("low", SessionSendService.normalizeRequestedReasoningEffort(" low "));
+        assertEquals("xhigh", SessionSendService.normalizeRequestedReasoningEffort("xhigh"));
+        assertEquals("max", SessionSendService.normalizeRequestedReasoningEffort("max"));
+    }
+
+    @Test
     public void getCodexRuntimeAccessErrorRequiresAuthorizationOrManagedProvider() {
         assertEquals(
                 "Codex local configuration access is not authorized. Please authorize local ~/.codex access or enable a managed Codex provider first.",
@@ -42,5 +52,12 @@ public class SessionSendServiceTest {
         );
         assertNull(SessionSendService.getCodexRuntimeAccessError("managed"));
         assertNull(SessionSendService.getCodexRuntimeAccessError("cli_login"));
+    }
+
+    @Test
+    public void newSessionStateDoesNotInjectDefaultClaudeReasoningEffort() {
+        SessionState state = new SessionState();
+
+        assertNull(state.getReasoningEffort());
     }
 }
