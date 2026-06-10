@@ -1031,8 +1031,8 @@
       "windowRemainingPercent": "剩余 {{percent}}%",
       "windowRemainingPercentWithReset": "剩余 {{percent}}% · 重置于 {{value}}",
       "windowUsedOnly": "已用 {{used}}",
-      "windowDetail": "已用 {{used}} · 剩余 {{remaining}} / {{limit}}",
-      "windowUnavailable": "不可用"
+      "windowUnavailable": "不可用",
+      "apiKeyMode": "API key 模式无订阅配额"
     },
     "nodeProcesses": {
       "title": "Node 进程管理",

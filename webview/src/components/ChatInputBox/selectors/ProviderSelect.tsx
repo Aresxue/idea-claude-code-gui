@@ -19,14 +19,17 @@ const DROPDOWN_STYLE: React.CSSProperties = {
   zIndex: 10000,
 };
 const TOAST_STYLE: React.CSSProperties = { zIndex: 20000 };
+const SUBMENU_MAX_WIDTH_PX = 360;
+/** How much the submenu overlaps its parent row so the cursor can travel into it. */
+const SUBMENU_OVERLAP_PX = 30;
+const SUBMENU_VIEWPORT_MARGIN_PX = 8;
 const SUBMENU_STYLE: React.CSSProperties = {
   position: 'absolute',
   left: '100%',
   bottom: 0,
-  marginLeft: '-30px',
   zIndex: 10001,
   minWidth: '300px',
-  maxWidth: '360px',
+  maxWidth: `${SUBMENU_MAX_WIDTH_PX}px`,
 };
 const SUBMENU_ROW_STYLE: React.CSSProperties = {
   display: 'flex',
@@ -74,6 +77,8 @@ export const ProviderSelect = ({ value, onChange, compact = false }: ProviderSel
   const [activeSubmenu, setActiveSubmenu] = useState<'none' | 'codexQuota'>('none');
   const [codexQuota, setCodexQuota] = useState<CodexSubscriptionQuotaSnapshot | null>(null);
   const [quotaLoading, setQuotaLoading] = useState(false);
+  // Extra left shift (px) applied to the quota submenu so it stays inside the viewport on narrow panels.
+  const [submenuShiftX, setSubmenuShiftX] = useState(0);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +178,9 @@ export const ProviderSelect = ({ value, onChange, compact = false }: ProviderSel
   const renderCodexQuotaSubmenu = () => {
     const fiveHour = codexQuota?.windows.fiveHour;
     const weekly = codexQuota?.windows.weekly;
+    // API-key providers are billed per token and have no subscription quota,
+    // so the window rows would only ever show "Unavailable" noise.
+    const isApiKeyMode = codexQuota?.reasonCode === 'api_key_mode';
 
     const renderWindowRow = (
       label: string,
@@ -229,7 +237,7 @@ export const ProviderSelect = ({ value, onChange, compact = false }: ProviderSel
     return (
       <div
         className="selector-dropdown"
-        style={SUBMENU_STYLE}
+        style={{ ...SUBMENU_STYLE, marginLeft: `${-SUBMENU_OVERLAP_PX - submenuShiftX}px` }}
         onClick={(e) => e.stopPropagation()}
         onMouseEnter={(e) => {
           e.stopPropagation();
@@ -241,21 +249,26 @@ export const ProviderSelect = ({ value, onChange, compact = false }: ProviderSel
           <div style={SUBMENU_ROW_STYLE}>
             <span>{t('config.codexQuota.title', { defaultValue: 'Codex quota' })}</span>
             <span className="model-description">
-              {codexQuota?.status === 'ok'
-                ? t('config.codexQuota.lastUpdated', {
-                    value: new Date(codexQuota.fetchedAt).toLocaleString(),
-                    defaultValue: 'Updated {{value}}',
-                  })
-                : quotaLoading
-                  ? t('config.codexQuota.loading', { defaultValue: 'Loading...' })
-                  : t('config.codexQuota.unavailable', { defaultValue: 'Unavailable' })}
+              {isApiKeyMode
+                ? t('config.codexQuota.apiKeyMode', { defaultValue: 'API key mode has no subscription quota' })
+                : codexQuota?.status === 'ok'
+                  ? t('config.codexQuota.lastUpdated', {
+                      value: new Date(codexQuota.fetchedAt).toLocaleString(),
+                      defaultValue: 'Updated {{value}}',
+                    })
+                  : quotaLoading
+                    ? t('config.codexQuota.loading', { defaultValue: 'Loading...' })
+                    : t('config.codexQuota.unavailable', { defaultValue: 'Unavailable' })}
               </span>
           </div>
         </div>
-        <div style={SUBMENU_DIVIDER_STYLE} />
-
-        {renderWindowRow(t('config.codexQuota.fiveHour', { defaultValue: '5h usage' }), fiveHour, false)}
-        {renderWindowRow(t('config.codexQuota.weekly', { defaultValue: 'Weekly usage' }), weekly, true)}
+        {!isApiKeyMode && (
+          <>
+            <div style={SUBMENU_DIVIDER_STYLE} />
+            {renderWindowRow(t('config.codexQuota.fiveHour', { defaultValue: '5h usage' }), fiveHour, false)}
+            {renderWindowRow(t('config.codexQuota.weekly', { defaultValue: 'Weekly usage' }), weekly, true)}
+          </>
+        )}
       </div>
     );
   };
@@ -294,8 +307,18 @@ export const ProviderSelect = ({ value, onChange, compact = false }: ProviderSel
                   ...(provider.id === 'codex' ? { position: 'relative' } : {}),
                 }}
                 data-provider-id={provider.id}
-                onMouseEnter={() => {
-                  setActiveSubmenu(provider.id === 'codex' ? 'codexQuota' : 'none');
+                onMouseEnter={(e) => {
+                  if (provider.id === 'codex') {
+                    // Shift the submenu back into view when the panel is too
+                    // narrow for it to fit on the right of the row.
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const overflow = rect.right - SUBMENU_OVERLAP_PX + SUBMENU_MAX_WIDTH_PX
+                      - (window.innerWidth - SUBMENU_VIEWPORT_MARGIN_PX);
+                    setSubmenuShiftX(overflow > 0 ? Math.round(overflow) : 0);
+                    setActiveSubmenu('codexQuota');
+                  } else {
+                    setActiveSubmenu('none');
+                  }
                 }}
                 onMouseLeave={() => {
                   if (provider.id === 'codex') {

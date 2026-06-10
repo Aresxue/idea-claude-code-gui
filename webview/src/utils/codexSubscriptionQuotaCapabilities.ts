@@ -20,6 +20,8 @@ export interface CodexSubscriptionQuotaSnapshot {
   fetchedAt: number;
   source?: string;
   error?: string;
+  /** Machine-readable reason for unavailability, e.g. 'api_key_mode'. */
+  reasonCode?: string;
   windows: {
     fiveHour: CodexSubscriptionQuotaWindow;
     weekly: CodexSubscriptionQuotaWindow;

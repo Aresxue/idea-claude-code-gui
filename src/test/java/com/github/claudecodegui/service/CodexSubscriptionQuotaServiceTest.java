@@ -107,7 +107,7 @@ public class CodexSubscriptionQuotaServiceTest {
                 sessionLine(Instant.ofEpochMilli(now.get() - 1_000).toString(), 40.0, 10.0)
         );
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -129,7 +129,7 @@ public class CodexSubscriptionQuotaServiceTest {
         AtomicLong now = new AtomicLong(BASE_NOW);
         AtomicInteger fetchCount = new AtomicInteger();
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -153,7 +153,7 @@ public class CodexSubscriptionQuotaServiceTest {
         AtomicLong now = new AtomicLong(BASE_NOW);
         AtomicInteger fetchCount = new AtomicInteger();
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     if (fetchCount.incrementAndGet() == 1) {
@@ -178,7 +178,7 @@ public class CodexSubscriptionQuotaServiceTest {
     public void returnsUnavailableWhenRefreshFailsWithoutCache() {
         AtomicLong now = new AtomicLong(BASE_NOW);
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     throw new IllegalStateException("network");
@@ -198,7 +198,7 @@ public class CodexSubscriptionQuotaServiceTest {
         AtomicLong now = new AtomicLong(BASE_NOW);
         AtomicInteger fetchCount = new AtomicInteger();
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -227,7 +227,7 @@ public class CodexSubscriptionQuotaServiceTest {
     @Test
     public void findLastEventMsgTokenCountReturnsLatestMatchingSessionEntry() throws Exception {
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> usageWithPrimaryUsedPercent(44)
         );
@@ -248,7 +248,7 @@ public class CodexSubscriptionQuotaServiceTest {
     @Test
     public void findLastEventMsgTokenCountReturnsEmptyWhenNoMatchingEntryExists() throws Exception {
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> usageWithPrimaryUsedPercent(44)
         );
@@ -270,7 +270,7 @@ public class CodexSubscriptionQuotaServiceTest {
                 "{\"timestamp\":\"%s\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\"}}"
                         .formatted(Instant.ofEpochMilli(now.get() - 1_000).toString()));
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -297,7 +297,7 @@ public class CodexSubscriptionQuotaServiceTest {
                 sessionLine(Instant.ofEpochMilli(now.get() - 61_000).toString(), 80.0, 20.0)
         );
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -319,7 +319,7 @@ public class CodexSubscriptionQuotaServiceTest {
         AtomicLong now = new AtomicLong(BASE_NOW);
         AtomicInteger fetchCount = new AtomicInteger();
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -344,7 +344,7 @@ public class CodexSubscriptionQuotaServiceTest {
         AtomicInteger fetchCount = new AtomicInteger();
         Path sessionsDir = newSessionsDir();
         CodexSubscriptionQuotaService service = newService(
-                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_CLI_LOGIN,
                 authWithToken(),
                 token -> {
                     fetchCount.incrementAndGet();
@@ -393,6 +393,57 @@ public class CodexSubscriptionQuotaServiceTest {
 
         assertEquals(0, fetchCount.get());
         assertEquals("session_event", payload.get("source").getAsString());
+    }
+
+    @Test
+    public void managedModeReturnsApiKeyModePayloadWithoutTouchingAnySource() {
+        AtomicLong now = new AtomicLong(BASE_NOW);
+        AtomicInteger fetchCount = new AtomicInteger();
+        Path sessionsDir = newSessionsDir();
+        writeSessionFile(
+                sessionsDir.resolve("2026/06/05/session.jsonl"),
+                sessionLine(Instant.ofEpochMilli(now.get() - 1_000).toString(), 40.0, 10.0)
+        );
+        CodexSubscriptionQuotaService service = newService(
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                authWithToken(),
+                token -> {
+                    fetchCount.incrementAndGet();
+                    return usageWithPrimaryUsedPercent(99);
+                },
+                sessionsDir,
+                now
+        );
+
+        JsonObject payload = service.getQuotaSnapshot().join();
+
+        assertEquals(0, fetchCount.get());
+        assertEquals("unavailable", payload.get("status").getAsString());
+        assertEquals("api_key_mode", payload.get("reasonCode").getAsString());
+        assertEquals("none", payload.get("source").getAsString());
+    }
+
+    @Test
+    public void managedModeSkipsApiFetchEvenWhenAuthJsonHasLeftoverOauthToken() {
+        AtomicLong now = new AtomicLong(BASE_NOW);
+        AtomicInteger fetchCount = new AtomicInteger();
+        CodexSubscriptionQuotaService service = newService(
+                CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED,
+                authWithToken(),
+                token -> {
+                    fetchCount.incrementAndGet();
+                    return usageWithPrimaryUsedPercent(99);
+                },
+                newSessionsDir(),
+                now
+        );
+
+        // Exercise the refresh path directly to verify the defense-in-depth
+        // check inside fetchApiSnapshot, not just the entry shortcut.
+        JsonObject payload = service.forceRefreshForTest();
+
+        assertEquals(0, fetchCount.get());
+        assertEquals("unavailable", payload.get("status").getAsString());
     }
 
     private CodexSubscriptionQuotaService newService(

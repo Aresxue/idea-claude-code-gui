@@ -1026,8 +1026,8 @@
       "windowRemainingPercent": "{{percent}}% remaining",
       "windowRemainingPercentWithReset": "{{percent}}% remaining · Resets {{value}}",
       "windowUsedOnly": "{{used}} used",
-      "windowDetail": "{{used}} used · {{remaining}} remaining / {{limit}}",
-      "windowUnavailable": "Unavailable"
+      "windowUnavailable": "Unavailable",
+      "apiKeyMode": "API key mode has no subscription quota"
     },
     "nodeProcesses": {
       "title": "Node Process Manager",

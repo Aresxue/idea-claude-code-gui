@@ -19,7 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -99,13 +99,25 @@ public final class CodexSubscriptionQuotaService {
         JsonObject payload = new JsonObject();
         payload.addProperty("status", "unavailable");
         payload.addProperty("fetchedAt", now);
-        payload.addProperty("source", "wham_usage");
+        payload.addProperty("source", "none");
         payload.addProperty("error", reason != null ? reason : "unavailable");
 
         JsonObject windows = new JsonObject();
-        windows.add("fiveHour", toWindow("5h", 5, null, "wham_usage", now));
-        windows.add("weekly", toWindow("weekly", 7 * 24, null, "wham_usage", now));
+        windows.add("fiveHour", toWindow("5h", 5, null, "none", now));
+        windows.add("weekly", toWindow("weekly", 7 * 24, null, "none", now));
         payload.add("windows", windows);
+        return payload;
+    }
+
+    /**
+     * API-key (managed provider) mode has no subscription quota: requests are billed
+     * per token, and any OAuth credentials left in ~/.codex/auth.json belong to an
+     * account unrelated to the active provider. The reasonCode lets the WebView show
+     * a dedicated message instead of a generic "unavailable".
+     */
+    static JsonObject buildApiKeyModePayload(long now) {
+        JsonObject payload = buildUnavailablePayload("API key mode has no subscription quota", now);
+        payload.addProperty("reasonCode", "api_key_mode");
         return payload;
     }
 
@@ -300,8 +312,22 @@ public final class CodexSubscriptionQuotaService {
         return snapshot.payload.deepCopy();
     }
 
+    private boolean isApiKeyMode() {
+        try {
+            return CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED.equals(runtimeAccessResolver.get());
+        } catch (Exception e) {
+            LOG.warn("Failed to resolve Codex runtime access mode: " + e.getMessage());
+            return false;
+        }
+    }
+
     public CompletableFuture<JsonObject> getQuotaSnapshot() {
         long now = now();
+        // Checked before the cache fast path so a snapshot cached under cli_login
+        // mode is never served after the user switches to an API-key provider.
+        if (isApiKeyMode()) {
+            return CompletableFuture.completedFuture(buildApiKeyModePayload(now));
+        }
         Optional<Snapshot> cachedSession = sessionSnapshotCache.current()
             .filter(snapshot -> isSessionSnapshotUsable(snapshot, now));
         if (sessionSnapshotCache.shouldSkipUpdate(now) && cachedSession.isPresent()) {
@@ -393,7 +419,13 @@ public final class CodexSubscriptionQuotaService {
     }
 
     private Optional<Snapshot> fetchApiSnapshot(long lastUpdate, long now) throws Exception {
-        if (CodemossSettingsService.CODEX_RUNTIME_ACCESS_INACTIVE.equals(runtimeAccessResolver.get())) {
+        String accessMode = runtimeAccessResolver.get();
+        // In managed (API-key) mode any access_token in auth.json belongs to an
+        // unrelated OAuth login, so querying wham/usage would show quota for the
+        // wrong account. Skipped here as well in case a future caller bypasses
+        // the getQuotaSnapshot() entry check.
+        if (CodemossSettingsService.CODEX_RUNTIME_ACCESS_INACTIVE.equals(accessMode)
+                || CodemossSettingsService.CODEX_RUNTIME_ACCESS_MANAGED.equals(accessMode)) {
             return Optional.empty();
         }
 
@@ -409,14 +441,15 @@ public final class CodexSubscriptionQuotaService {
 
     private Optional<Snapshot> fromRecentSessions(long lastUpdate, long now) {
         try (var stream = Files.walk(codexSessionPath)) {
-            Comparator<Path> comparator = Comparator
-                .comparingLong(CodexSubscriptionQuotaService::getModifiedTime)
-                .reversed();
+            // Stat each file once up front; sorting on getModifiedTime directly
+            // would re-stat files on every comparison.
             return stream
                 .filter(Files::isRegularFile)
                 .filter(p -> p.toString().endsWith(".jsonl"))
-                .filter(p -> getModifiedTime(p) > lastUpdate)
-                .sorted(comparator)
+                .map(p -> Map.entry(p, getModifiedTime(p)))
+                .filter(e -> e.getValue() > lastUpdate)
+                .sorted(Map.Entry.<Path, Long>comparingByValue().reversed())
+                .map(Map.Entry::getKey)
                 .map(this::findLastEventMsgTokenCount)
                 .flatMap(Optional::stream)
                 .map(this::buildFromSessionMessage)
@@ -463,11 +496,12 @@ public final class CodexSubscriptionQuotaService {
     }
 
     private static class HttpWhamUsageFetcher implements WhamUsageFetcher {
+        private final HttpClient client = HttpClient.newBuilder()
+            .connectTimeout(HTTP_TIMEOUT)
+            .build();
+
         @Override
         public JsonObject fetch(String token) throws Exception {
-            HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(HTTP_TIMEOUT)
-                .build();
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(WHAM_USAGE_URL))
                 .timeout(HTTP_TIMEOUT)

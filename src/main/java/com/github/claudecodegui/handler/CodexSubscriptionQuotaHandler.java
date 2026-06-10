@@ -27,8 +27,11 @@ public class CodexSubscriptionQuotaHandler {
                 .getQuotaSnapshot()
                 .thenAccept(this::sendPayload)
                 .exceptionally(e -> {
-                    LOG.warn("[CodexSubscriptionQuotaHandler] Failed to load quota: " + e.getMessage());
-                    sendPayload(CodexSubscriptionQuotaService.buildUnavailablePayload(e.getMessage(), System.currentTimeMillis()));
+                    // Unwrap CompletionException so the WebView shows the cause
+                    // message instead of "java.lang.XxxException: ...".
+                    Throwable cause = e.getCause() != null ? e.getCause() : e;
+                    LOG.warn("[CodexSubscriptionQuotaHandler] Failed to load quota: " + cause.getMessage());
+                    sendPayload(CodexSubscriptionQuotaService.buildUnavailablePayload(cause.getMessage(), System.currentTimeMillis()));
                     return null;
                 });
     }

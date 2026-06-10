@@ -134,4 +134,51 @@ describe('ProviderSelect Codex quota submenu', () => {
     expect(screen.queryByText('0 used')).toBeNull();
     expect(screen.queryByText(/Resets /)).toBeNull();
   });
+
+  it('shows a dedicated message and hides window rows in API key mode', async () => {
+    render(<ProviderSelect value="claude" />);
+
+    fireEvent.click(screen.getByRole('button'));
+    const codexRow = screen.getByText('Codex').closest('.selector-option')!;
+    fireEvent.mouseEnter(codexRow);
+
+    act(() => {
+      window.updateCodexSubscriptionQuota?.(JSON.stringify({
+        status: 'unavailable',
+        fetchedAt: 1710000000000,
+        source: 'none',
+        reasonCode: 'api_key_mode',
+        error: 'API key mode has no subscription quota',
+        windows: {
+          fiveHour: {
+            windowLabel: '5h',
+            windowHours: 5,
+            usedPercent: null,
+            remainingPercent: null,
+            resetsAt: null,
+            usedTokens: 0,
+            limitTokens: null,
+            remainingTokens: null,
+          },
+          weekly: {
+            windowLabel: 'weekly',
+            windowHours: 168,
+            usedPercent: null,
+            remainingPercent: null,
+            resetsAt: null,
+            usedTokens: 0,
+            limitTokens: null,
+            remainingTokens: null,
+          },
+        },
+      }));
+    });
+
+    const codexRowElement = codexRow as HTMLElement;
+    expect(await within(codexRowElement).findByText('Codex quota')).toBeTruthy();
+    expect(within(codexRowElement).getByText('API key mode has no subscription quota')).toBeTruthy();
+    expect(within(codexRowElement).queryByText('5h usage')).toBeNull();
+    expect(within(codexRowElement).queryByText('Weekly usage')).toBeNull();
+    expect(within(codexRowElement).queryByText('Unavailable')).toBeNull();
+  });
 });
