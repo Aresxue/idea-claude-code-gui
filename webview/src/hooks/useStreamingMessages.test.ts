@@ -504,6 +504,106 @@ describe('useStreamingMessages', () => {
     // Turn 2 block now streams the latest suffix live.
     expect(rawAfter[2]).toMatchObject({ thinking: 'Turn2ab' });
   });
+
+  it('does not overwrite a closed pre-tool text block when the content buffer diverges', () => {
+    // Content-path mirror of the thinking trailing-block guard. The pre-tool
+    // text block is finalized (a tool_use follows it). The cumulative content
+    // buffer has diverged from that block (no prefix relationship — e.g. a
+    // snapshot-mode provider dedup-rewrote the closed block). The sync function
+    // must leave the closed block untouched and wait for updateMessages, NOT
+    // overwrite it with the new turn's post-tool content. Before the guard, the
+    // single-block happy path overwrote block[0] with the whole buffer.
+    const { result } = renderHook(() => useStreamingMessages());
+
+    result.current.streamingContentRef.current = 'Completely different post-tool content';
+
+    const assistant: ClaudeMessage = {
+      type: 'assistant',
+      content: 'XYZ',
+      isStreaming: true,
+      raw: {
+        message: {
+          content: [
+            { type: 'text', text: 'XYZ' },
+            { type: 'tool_use', id: 't1', name: 'run', input: {} },
+          ],
+        },
+      },
+    };
+
+    const patched = result.current.patchAssistantForStreaming(assistant);
+    const rawContent = (patched.raw as any).message.content as ContentBlockTest[];
+
+    // Closed pre-tool block preserved (NOT overwritten with the diverged buffer).
+    expect(rawContent[0]).toMatchObject({ type: 'text', text: 'XYZ' });
+    // Structure unchanged — no leak into the previous segment.
+    expect(rawContent.map((b) => b.type)).toEqual(['text', 'tool_use']);
+  });
+
+  it('keeps backend raw structure intact when the cumulative content buffer cannot be reconciled (multi-block)', () => {
+    // Content-path mirror of the thinking "cannot be reconciled" regression.
+    // prefixText is 'A' (the earlier text block); the buffer 'disjoint' does not
+    // start with it, so the structure must be returned untouched.
+    const { result } = renderHook(() => useStreamingMessages());
+
+    result.current.streamingContentRef.current = 'disjoint';
+
+    const assistant: ClaudeMessage = {
+      type: 'assistant',
+      content: '',
+      isStreaming: true,
+      raw: {
+        message: {
+          content: [
+            { type: 'text', text: 'A' },
+            { type: 'tool_use', id: 't1', name: 'run', input: {} },
+            { type: 'text', text: 'B' },
+          ],
+        },
+      },
+    };
+
+    const patched = result.current.patchAssistantForStreaming(assistant);
+    const rawContent = (patched.raw as any).message.content as ContentBlockTest[];
+
+    expect(rawContent.map((b) => b.type)).toEqual(['text', 'tool_use', 'text']);
+    expect(rawContent[0]).toMatchObject({ type: 'text', text: 'A' });
+    expect(rawContent[2]).toMatchObject({ type: 'text', text: 'B' });
+  });
+
+  it('streams post-tool text into its own trailing block, never the pre-tool block (cross-turn)', () => {
+    // Happy-path cross-turn regression anchor: the boundary mechanism routes the
+    // new turn's text into a freshly fabricated trailing block instead of growing
+    // (or overwriting) the closed pre-tool block. Passes before AND after the
+    // guard change — locks the correct streaming behavior in place.
+    const { result } = renderHook(() => useStreamingMessages());
+
+    result.current.streamingContentRef.current = 'Turn1Content';
+    const beforeTurn2: ClaudeMessage = {
+      type: 'assistant',
+      content: 'Turn1Content',
+      isStreaming: true,
+      raw: {
+        message: {
+          content: [
+            { type: 'text', text: 'Turn1Content' },
+            { type: 'tool_use', id: 'b1', name: 'run', input: {} },
+          ],
+        },
+      },
+    };
+    const patchedBefore = result.current.patchAssistantForStreaming(beforeTurn2);
+    expect((patchedBefore.raw as any).message.content.map((b: ContentBlockTest) => b.type))
+      .toEqual(['text', 'tool_use']);
+
+    result.current.streamingContentRef.current = 'Turn1ContentTurn2Content';
+    const patchedAfter = result.current.patchAssistantForStreaming(patchedBefore);
+    const rawAfter = (patchedAfter.raw as any).message.content as ContentBlockTest[];
+
+    expect(rawAfter.map((b) => b.type)).toEqual(['text', 'tool_use', 'text']);
+    expect(rawAfter[0]).toMatchObject({ type: 'text', text: 'Turn1Content' });
+    expect(rawAfter[2]).toMatchObject({ type: 'text', text: 'Turn2Content' });
+  });
 });
 
 interface ContentBlockTest {

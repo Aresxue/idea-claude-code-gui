@@ -166,17 +166,27 @@ export function useStreamingMessages(): UseStreamingMessagesReturn {
       trailingStructuralTextBoundaryRef.current = null;
     }
 
+    // Cannot reconcile the cumulative buffer with the split blocks — e.g. the
+    // backend dedup rewrote an earlier block, or a new turn's text has not yet
+    // been delivered as its own block.  Leave the structure untouched and let
+    // the next backend snapshot author the correct blocks.  Mirror of
+    // syncThinkingBlocksWithContent's prefix guard.  (The previous single-block
+    // overwrite branch here was unreachable: a single text block makes
+    // prefixText '' so content.startsWith('') is always true.)
     if (!content.startsWith(prefixText)) {
-      if (textIndices.length !== 1) {
-        return blocks;
-      }
-      const currentText = typeof blocks[lastTextIdx]?.text === 'string' ? blocks[lastTextIdx].text : '';
-      if (currentText === content) {
-        return blocks;
-      }
-      const nextBlocks = [...blocks];
-      nextBlocks[lastTextIdx] = { ...nextBlocks[lastTextIdx], text: content };
-      return nextBlocks;
+      return blocks;
+    }
+
+    // Trailing-block guard: only grow the message's final text block, the single
+    // active prose segment of the current turn.  When any later block (tool_use,
+    // tool_result, thinking) already follows it, the segment is closed — post-tool
+    // growth is handled by the trailingStructuralTextBoundaryRef branch above, so
+    // reaching here means the cumulative buffer diverged from the snapshot.  Wait
+    // for updateMessages instead of overwriting the closed pre-tool block with the
+    // new turn's content.  Mirror of syncThinkingBlocksWithContent's trailing-block
+    // guard.
+    if (lastTextIdx !== blocks.length - 1) {
+      return blocks;
     }
 
     const desiredLastText = content.slice(prefixText.length);
