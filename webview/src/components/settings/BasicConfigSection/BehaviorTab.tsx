@@ -110,6 +110,8 @@ export interface BehaviorTabProps {
   onBrowseSound?: () => void;
   taskCompletionNotificationEnabled?: boolean;
   onTaskCompletionNotificationEnabledChange?: (enabled: boolean) => void;
+  askUserQuestionNotificationEnabled?: boolean;
+  onAskUserQuestionNotificationEnabledChange?: (enabled: boolean) => void;
   permissionDialogTimeoutSeconds?: number;
   onPermissionDialogTimeoutChange?: (seconds: number) => void;
 }
@@ -144,6 +146,8 @@ const BehaviorTab = ({
   onBrowseSound = () => {},
   taskCompletionNotificationEnabled = false,
   onTaskCompletionNotificationEnabledChange = () => {},
+  askUserQuestionNotificationEnabled = false,
+  onAskUserQuestionNotificationEnabledChange = () => {},
   permissionDialogTimeoutSeconds = DEFAULT_PERMISSION_DIALOG_TIMEOUT_SECONDS,
   onPermissionDialogTimeoutChange = () => {},
 }: BehaviorTabProps) => {
@@ -353,6 +357,32 @@ const BehaviorTab = ({
         <small className={styles.formHint}>
           <span className="codicon codicon-info" />
           <span>{t('settings.basic.taskCompletionNotification.hint')}</span>
+        </small>
+      </div>
+
+      {/* AskUserQuestion reminder notification toggle */}
+      <div className={styles.streamingSection}>
+        <div className={styles.fieldHeader}>
+          <span className="codicon codicon-comment-discussion" />
+          <span className={styles.fieldLabel}>{t('settings.basic.askUserQuestionNotification.label')}</span>
+        </div>
+        <label className={styles.toggleWrapper}>
+          <input
+            type="checkbox"
+            className={styles.toggleInput}
+            checked={askUserQuestionNotificationEnabled}
+            onChange={(e) => onAskUserQuestionNotificationEnabledChange(e.target.checked)}
+          />
+          <span className={styles.toggleSlider} />
+          <span className={styles.toggleLabel}>
+            {askUserQuestionNotificationEnabled
+              ? t('settings.basic.askUserQuestionNotification.enabled')
+              : t('settings.basic.askUserQuestionNotification.disabled')}
+          </span>
+        </label>
+        <small className={styles.formHint}>
+          <span className="codicon codicon-info" />
+          <span>{t('settings.basic.askUserQuestionNotification.hint')}</span>
         </small>
       </div>
 

@@ -244,6 +244,12 @@
         "disabled": "Desactivado",
         "hint": "Cuando está activado, muestra una notificación del sistema cuando la tarea AI se completa. Cuando está desactivado, no aparece ninguna notificación."
       },
+      "askUserQuestionNotification": {
+        "label": "Notificación de pregunta al usuario",
+        "enabled": "Activado",
+        "disabled": "Desactivado",
+        "hint": "Cuando está activado, muestra una notificación del sistema cuando Claude te hace una pregunta, para que no la pierdas. Cuando está desactivado, no aparece ninguna notificación."
+      },
       "sendShortcut": {
         "label": "Atajo de envío",
         "enter": "Enter para enviar",

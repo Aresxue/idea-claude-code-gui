@@ -256,6 +256,12 @@
         "disabled": "Desativado",
         "hint": "Quando ativado, exibe uma notificação do sistema quando a tarefa AI é concluída. Quando desativado, nenhuma notificação aparece."
       },
+      "askUserQuestionNotification": {
+        "label": "Notificação de Pergunta ao Usuário",
+        "enabled": "Ativado",
+        "disabled": "Desativado",
+        "hint": "Quando ativado, exibe uma notificação do sistema quando o Claude faz uma pergunta, para que você não a perca. Quando desativado, nenhuma notificação aparece."
+      },
       "sendShortcut": {
         "label": "Atalho de Envio",
         "enter": "Enter para Enviar",

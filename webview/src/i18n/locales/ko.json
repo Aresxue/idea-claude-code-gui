@@ -244,6 +244,12 @@
         "disabled": "비활성화",
         "hint": "활성화하면 AI 작업이 완료될 때 시스템 알림이 표시됩니다. 비활성화하면 알림이 표시되지 않습니다."
       },
+      "askUserQuestionNotification": {
+        "label": "사용자 질문 알림",
+        "enabled": "활성화",
+        "disabled": "비활성화",
+        "hint": "활성화하면 Claude가 질문할 때 시스템 알림을 표시하여 놓치지 않도록 합니다. 비활성화하면 알림이 표시되지 않습니다."
+      },
       "sendShortcut": {
         "label": "전송 단축키",
         "enter": "Enter로 전송",

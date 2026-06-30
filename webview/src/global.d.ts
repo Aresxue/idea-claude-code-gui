@@ -340,6 +340,11 @@ interface Window {
   updateTaskCompletionNotificationEnabled?: (json: string) => void;
 
   /**
+   * Update AskUserQuestion reminder notification enabled state
+   */
+  updateAskUserQuestionNotificationEnabled?: (json: string) => void;
+
+  /**
    * Update permission dialog timeout setting
    */
   updatePermissionDialogTimeout?: (json: string) => void;

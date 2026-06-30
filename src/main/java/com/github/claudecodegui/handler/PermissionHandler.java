@@ -415,6 +415,16 @@ public class PermissionHandler extends BaseMessageHandler {
 
         pendingAskUserQuestionRequests.put(requestId, future);
 
+        // Remind the user (via the opt-in system toast) that Claude is waiting for an
+        // answer. Triggered here — before the JS dialog render — so the toast fires
+        // for every AskUserQuestion regardless of whether the webview is reachable.
+        try {
+            com.github.claudecodegui.util.SystemNotificationService.getInstance()
+                .showAskUserQuestionReminderToast(context.getProject());
+        } catch (Exception e) {
+            LOG.warn("[ASK_USER_QUESTION][SHOW_DIALOG] Failed to show reminder toast: " + e.getMessage());
+        }
+
         try {
             Gson gson = new Gson();
             String requestJson = gson.toJson(questionsData);

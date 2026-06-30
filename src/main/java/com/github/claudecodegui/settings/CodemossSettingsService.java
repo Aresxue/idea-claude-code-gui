@@ -1359,6 +1359,35 @@ public class CodemossSettingsService {
         LOG.info("[CodemossSettings] Set task completion notification enabled: " + enabled);
     }
 
+    // ==================== Ask User Question Notification Management ====================
+
+    /**
+     * Get whether the AskUserQuestion reminder notification is enabled.
+     *
+     * @return whether the reminder notification is enabled, default is false (opt-in)
+     */
+    public boolean getAskUserQuestionNotificationEnabled() throws IOException {
+        JsonObject config = readConfig();
+
+        if (config.has("askUserQuestionNotificationEnabled") && !config.get("askUserQuestionNotificationEnabled").isJsonNull()) {
+            return config.get("askUserQuestionNotificationEnabled").getAsBoolean();
+        }
+
+        return false;
+    }
+
+    /**
+     * Set whether the AskUserQuestion reminder notification is enabled.
+     *
+     * @param enabled whether to enable
+     */
+    public void setAskUserQuestionNotificationEnabled(boolean enabled) throws IOException {
+        JsonObject config = readConfig();
+        config.addProperty("askUserQuestionNotificationEnabled", enabled);
+        writeConfig(config);
+        LOG.info("[CodemossSettings] Set ask user question notification enabled: " + enabled);
+    }
+
     // ==================== AI Feature Toggle Management ====================
 
     /**

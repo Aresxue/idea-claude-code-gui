@@ -29,6 +29,8 @@ function renderBehaviorTab(overrides: Partial<ComponentProps<typeof BehaviorTab>
     onAiTitleGenerationEnabledChange: vi.fn(),
     taskCompletionNotificationEnabled: false,
     onTaskCompletionNotificationEnabledChange: vi.fn(),
+    askUserQuestionNotificationEnabled: false,
+    onAskUserQuestionNotificationEnabledChange: vi.fn(),
     permissionDialogTimeoutSeconds: 300,
     onPermissionDialogTimeoutChange: vi.fn(),
     ...overrides,

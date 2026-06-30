@@ -5,6 +5,7 @@ English:
 ✨ Features
 - Add live permission-mode hot-swap: switching the permission mode mid-turn now takes effect immediately for the current turn's subsequent tool calls — no runtime restart, no waiting for the next message. Claude pushes the new mode straight to the live runtime; Codex rebuilds thread options per turn (by @gadfly3173, closes #1380)
 - Add a GitHub Star button to the open-source promo banner: click to copy the repository URL for pasting into a browser; the main copy now reads "100% open-source and free", with full localization across 10 languages (by @zkpaiminmin)
+- Add an "Ask User Question notification" toggle to Basic Settings → Behavior: when enabled, an opt-in system toast (same slide-in style as the task-completion notification) fires whenever Claude triggers an AskUserQuestion, so you won't miss a pending question. Defaults to off; localized for all 10 languages.
 
 🔒 Security Hardening
 - Change the default permission mode from `bypassPermissions` to `default`, so tool calls are confirmed by default instead of auto-approved
