@@ -306,6 +306,7 @@ test('buildCliEnv leaves CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST unset for CLI logi
   // inherited copy from a parent Claude Code host.
   const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-gui-api-config-'));
   writeCodemossClaudeConfig(tempHome, '__cli_login__');
+  writeClaudeSettingsEnv(tempHome, {});
 
   const env = runBuildCliEnv(tempHome);
 

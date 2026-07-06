@@ -55,6 +55,7 @@ class ClaudeUsageAggregator {
             Map.entry("claude-sonnet-4-20250514", TIERED_SONNET_PRICING),
             Map.entry("claude-sonnet-4-5", TIERED_SONNET_PRICING),
             Map.entry("claude-sonnet-4-6", DEFAULT_PRICING),
+            Map.entry("claude-sonnet-5", DEFAULT_PRICING),
             Map.entry("claude-haiku-4", HAIKU_4_5_PRICING),
             Map.entry("claude-haiku-4-5", HAIKU_4_5_PRICING)
     );
@@ -68,6 +69,7 @@ class ClaudeUsageAggregator {
             "claude-opus-4-1",
             "claude-opus-4",
             "claude-sonnet-4-20250514",
+            "claude-sonnet-5",
             "claude-sonnet-4-6",
             "claude-sonnet-4-5",
             "claude-sonnet-4",
