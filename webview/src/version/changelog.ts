@@ -13,6 +13,54 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: '0.4.7',
+    date: '2026-07-09',
+    content: {
+      en: `✨ Features
+- Add an **MCP Marketplace**: "Add from MCP market" with switchable sources (built-in presets, official MCP Registry, GitHub MCP Registry, official GitHub org), a persisted source choice, and disk-cached results. Registry entries now render real package/runtime arguments, env vars and transport type instead of a bare \`uvx <package>\` (by @Miguel0888)
+- Add **Import from GitHub Copilot** for MCP servers: paste a config, preview, and save through the normal add path — headers merged, transport type inferred, conflicting ids renamed (by @Miguel0888)
+- Add **custom pricing for custom models**: per-model input/output/cache rates for Claude and Codex, used by usage aggregation; routed model ids like \`ppio/pa/gpt-5.5\` now match history recorded under \`pa/gpt-5.5\` (by @EzioX1459)
+- Add an **"Ask User Question notification" toggle** (Basic Settings → Behavior): an opt-in system toast whenever Claude triggers an AskUserQuestion. Off by default, localized for 10 languages (by @adminkk)
+
+🔒 Security Hardening
+- Default mode no longer yields every tool to the SDK: read-only tools still yield so \`settings.json\` deny-rules apply, while \`Bash\` / \`Write\` / \`Agent\` return \`ask\`, which outranks allow-rules — otherwise a malicious repo's \`.claude/settings.json\` could silently auto-approve \`Bash\` (by @zkpaiminmin)
+
+🐛 Fixes
+- Fix **Auto (\`bypassPermissions\`) doing nothing when switched mid-session**: the flag is frozen at process launch, so switching into/out of Auto now rebuilds the runtime (by @toxeh)
+- Fix the **permission mode resetting to Default after a plugin reinstall** — boot no longer clobbers Java's persisted mode with a wiped localStorage snapshot (by @toxeh)
+- Fix **background-turn answers never rendering live**; the reload is now deferred to stream end (by @toxeh)
+- Fix the **1M-context toggle silently doing nothing on a live runtime**: \`[1m]\` now changes the runtime signature, and \`setModel\` gets the resolved model id, not the SDK short name (by @toxeh)
+- Fix three chat-transcript glitches: a lost user message, a duplicated assistant answer, and a hidden "API request failed" bubble — plus the same swallowed error bubble on Codex (by @toxeh, @zkpaiminmin)
+- Fix an **empty History panel when the custom working directory is relative** (e.g. \`..\`): history now resolves against the normalized working directory (by @tc-imba)
+- Fix **skills and slash commands missing for WSL projects** opened from a Windows IDE over \`\\\\wsl.localhost\\...\` (by @tikitaka721, closes #1400)
+- Fix WSL-style \`HOME\` (\`/mnt/c/...\`) leaking into the native-Windows daemon and breaking Git Bash tools — most visibly \`git\` failing to persist credentials (by @Mickyzh); normalize \`HOME\` / \`CODEX_HOME\` per Node runtime before launching bridge children (by @selfdcl)
+- Fix **Codex custom models showing no reasoning**: force \`model_supports_reasoning_summaries\` for all models (by @codexvn, closes #1375)
+- Fix a **partial custom price wildly over-estimating cost**: unset dimensions now fall back to the model's built-in rate instead of 0 (by @zkpaiminmin, closes #1450)
+- Fix **"Always allow" re-prompting every turn** for Bash/Agent: restore tool-level approval memory and honor \`settings.json\` allow-rules (by @zkpaiminmin)`,
+      zh: `✨ 新功能
+- 新增 **MCP 应用市场**：「Add from MCP market」支持在内置预设、官方 MCP Registry、GitHub MCP Registry 与官方 GitHub 组织之间切换，数据源选择会持久化，结果落盘缓存。注册表条目现在渲染真实的 package/runtime 参数、环境变量与传输类型，而不是一条干瘪的 \`uvx <package>\`（by @Miguel0888）
+- MCP 新增**从 GitHub Copilot 导入**：粘贴配置、预览确认，走与手动添加相同的保存路径——合并 headers、推断传输类型、id 冲突时重命名（by @Miguel0888）
+- 新增**自定义模型的自定义计价**：为 Claude 和 Codex 自定义模型配置输入/输出/缓存单价并用于用量统计；\`ppio/pa/gpt-5.5\` 这类路由模型 id 现在能匹配历史中按 \`pa/gpt-5.5\` 记录的用量（by @EzioX1459）
+- 新增 **「AskUserQuestion 提醒通知」开关**（基础设置 → 行为设置）：Claude 触发 AskUserQuestion 时弹出系统通知。默认关闭，覆盖 10 种语言（by @adminkk）
+
+🔒 安全加固
+- 默认模式不再把所有工具交给 SDK：只读工具仍交由 SDK，以便 \`settings.json\` 的 deny 规则生效；\`Bash\` / \`Write\` / \`Agent\` 返回 \`ask\`，优先级高于 allow 规则——否则恶意仓库的 \`.claude/settings.json\` 就能静默自动放行 \`Bash\`（by @zkpaiminmin）
+
+🐛 修复
+- 修复**会话中途切到 Auto（\`bypassPermissions\`）不生效**：该开关是进程启动时冻结的参数，现在切入/切出 Auto 会重建 runtime（by @toxeh）
+- 修复**重装插件后权限模式被重置为 Default**——启动时不再用清空的 localStorage 快照覆盖 Java 侧持久化的模式（by @toxeh）
+- 修复**后台轮次的回答不实时渲染**：reload 推迟到 stream end（by @toxeh）
+- 修复 **1M 上下文开关在运行中的 runtime 上静默失效**：\`[1m]\` 现已纳入 runtime 签名，\`setModel\` 也改为接收解析后的完整模型 id 而非 SDK 短名（by @toxeh）
+- 修复三个聊天记录渲染异常：用户消息丢失、助手回答重复、「API request failed」气泡被吞——以及 Codex 侧同样被吞的错误气泡（by @toxeh、@zkpaiminmin）
+- 修复**自定义工作目录为相对路径（如 \`..\`）时历史面板恒为空**：历史现在按规范化后的工作目录解析（by @tc-imba）
+- 修复 **Windows IDE 经 \`\\\\wsl.localhost\\...\` 打开 WSL 项目时技能与斜杠命令全部消失**（by @tikitaka721，关闭 #1400）
+- 修复 WSL 风格 \`HOME\`（\`/mnt/c/...\`）泄漏进原生 Windows daemon 导致 Git Bash 工具异常，最典型的是 \`git\` 无法保存凭证（by @Mickyzh）；并在启动 bridge 子进程前按 Node runtime 规范化 \`HOME\` / \`CODEX_HOME\`（by @selfdcl）
+- 修复 **Codex 自定义模型不显示思考过程**：对所有模型强制开启 \`model_supports_reasoning_summaries\`（by @codexvn，关闭 #1375）
+- 修复**只填部分维度的自定义单价把费用估算撑爆**：未填写的维度回退到该模型的内置单价而非 0（by @zkpaiminmin，关闭 #1450）
+- 修复 **Bash/Agent 的「始终允许」每轮都重新弹窗**：恢复工具级授权记忆，并重新尊重 \`settings.json\` 的 allow 规则（by @zkpaiminmin）`,
+    },
+  },
+  {
     version: '0.4.6-fix1',
     date: '2026-07-06',
     content: {
