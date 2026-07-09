@@ -39,6 +39,8 @@ export interface MessageItemProps {
   toolResultSignature?: string;
   /** Current active provider id (e.g. 'claude', 'codex'); drives the streaming-connect label. */
   currentProvider?: string;
+  /** Show opt-in detailed footer extras such as turn cost and cache-hit ratio. */
+  detailedOutputEnabled?: boolean;
 }
 
 /** Map provider id to a human-readable label used in UI text. */
@@ -352,6 +354,7 @@ export const MessageItem = memo(function MessageItem({
   onNavigateToDependencySettings,
   toolResultSignature: _toolResultSignature,
   currentProvider,
+  detailedOutputEnabled = false,
 }: MessageItemProps): React.ReactElement {
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
   const [showStreamingConnectHint, setShowStreamingConnectHint] = useState(false);
@@ -759,7 +762,13 @@ export const MessageItem = memo(function MessageItem({
             {(() => {
               const tokenInfo = extractTokenUsage(message.raw);
               if (!tokenInfo) return null;
-              const cacheHitRatio = formatCacheHitRatio(tokenInfo);
+              const cacheHitRatio = detailedOutputEnabled ? formatCacheHitRatio(tokenInfo) : null;
+              const cacheHitLabel = cacheHitRatio
+                ? t('chat.cacheHitsWithRatio', {
+                  tokens: formatTokenCount(tokenInfo.cacheReadTokens),
+                  ratio: cacheHitRatio,
+                })
+                : '';
               return (
                 <>
                   <span className="message-duration-separator">·</span>
@@ -773,20 +782,14 @@ export const MessageItem = memo(function MessageItem({
                     })}
                   >
                     {t('chat.tokenUsage', {
-                      input: formatTokenCount(tokenInfo.inputTokens),
+                      input: `${formatTokenCount(tokenInfo.inputTokens)}${cacheHitLabel}`,
                       output: formatTokenCount(tokenInfo.outputTokens),
                     })}
-                    {tokenInfo.costUsd !== undefined ? ` / ${formatUsdCost(tokenInfo.costUsd)}` : ''}
                   </span>
-                  {cacheHitRatio && (
+                  {detailedOutputEnabled && tokenInfo.costUsd !== undefined && (
                     <>
                       <span className="message-duration-separator">·</span>
-                      <span className="message-duration-tokens">
-                        {t('chat.cacheHitsWithRatio', {
-                          tokens: formatTokenCount(tokenInfo.cacheReadTokens),
-                          ratio: cacheHitRatio,
-                        })}
-                      </span>
+                      <span className="message-duration-tokens">{formatUsdCost(tokenInfo.costUsd)}</span>
                     </>
                   )}
                 </>
