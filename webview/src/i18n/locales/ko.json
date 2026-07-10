@@ -1546,9 +1546,17 @@
       "tooltipDisabled": "Haiku에서는 1M 컨텍스트를 사용할 수 없습니다"
     },
     "codex": {
-      "gpt53codex": {
-        "label": "GPT-5.3-Codex",
-        "description": "향상된 기능의 최신 프론티어 에이전트 코딩 모델."
+      "gpt56sol": {
+        "label": "GPT-5.6 Sol",
+        "description": "복잡한 전문 작업을 위한 프런티어 모델."
+      },
+      "gpt56terra": {
+        "label": "GPT-5.6 Terra",
+        "description": "지능과 비용의 균형을 맞춘 GPT-5.6 모델."
+      },
+      "gpt56luna": {
+        "label": "GPT-5.6 Luna",
+        "description": "비용 민감형 워크로드에 최적화된 GPT-5.6 모델."
       },
       "gpt55": {
         "label": "GPT-5.5",
@@ -1557,30 +1565,6 @@
       "gpt54": {
         "label": "GPT-5.4",
         "description": "향상된 기능의 최신 프론티어 모델."
-      },
-      "gpt52codex": {
-        "label": "GPT-5.2-Codex",
-        "description": "프론티어 에이전트 코딩 모델."
-      },
-      "gpt51codexMax": {
-        "label": "GPT-5.1-Codex-Max",
-        "description": "깊고 빠른 추론을 위한 Codex 최적화 플래그십."
-      },
-      "gpt54mini": {
-        "label": "GPT-5.4-Mini",
-        "description": "더 가벼운 프론티어 에이전트 코딩 모델."
-      },
-      "gpt53codexSpark": {
-        "label": "GPT-5.3-Codex-Spark",
-        "description": "초고속 코딩 모델."
-      },
-      "gpt52": {
-        "label": "GPT-5.2",
-        "description": "전문 작업과 장시간 에이전트 작업에 최적화."
-      },
-      "gpt51codexMini": {
-        "label": "GPT-5.1-Codex-Mini",
-        "description": "Codex에 최적화. 저렴하고 빠르지만 성능이 낮음."
       }
     }
   },

@@ -1429,9 +1429,17 @@
       "tooltipDisabled": "1M contexte non disponible pour Haiku"
     },
     "codex": {
-      "gpt53codex": {
-        "label": "GPT-5.3-Codex",
-        "description": "Dernier modèle de codage agentique avec des capacités améliorées."
+      "gpt56sol": {
+        "label": "GPT-5.6 Sol",
+        "description": "Modèle frontier pour les travaux professionnels complexes."
+      },
+      "gpt56terra": {
+        "label": "GPT-5.6 Terra",
+        "description": "Modèle GPT-5.6 qui équilibre intelligence et coût."
+      },
+      "gpt56luna": {
+        "label": "GPT-5.6 Luna",
+        "description": "Modèle GPT-5.6 optimisé pour les charges de travail sensibles aux coûts."
       },
       "gpt55": {
         "label": "GPT-5.5",
@@ -1440,30 +1448,6 @@
       "gpt54": {
         "label": "GPT-5.4",
         "description": "Dernier modèle de pointe avec des capacités améliorées."
-      },
-      "gpt52codex": {
-        "label": "GPT-5.2-Codex",
-        "description": "Modèle de codage agentique de pointe."
-      },
-      "gpt51codexMax": {
-        "label": "GPT-5.1-Codex-Max",
-        "description": "Modèle phare optimisé pour Codex avec raisonnement profond et rapide."
-      },
-      "gpt54mini": {
-        "label": "GPT-5.4-Mini",
-        "description": "Modèle de codage agentique de pointe plus léger."
-      },
-      "gpt53codexSpark": {
-        "label": "GPT-5.3-Codex-Spark",
-        "description": "Modèle de codage ultra-rapide."
-      },
-      "gpt52": {
-        "label": "GPT-5.2",
-        "description": "Optimisé pour le travail professionnel et les agents longue durée."
-      },
-      "gpt51codexMini": {
-        "label": "GPT-5.1-Codex-Mini",
-        "description": "Optimisé pour Codex. Moins cher et plus rapide, mais moins performant."
       }
     }
   },

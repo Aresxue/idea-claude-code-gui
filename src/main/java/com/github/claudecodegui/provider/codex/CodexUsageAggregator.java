@@ -43,13 +43,21 @@ class CodexUsageAggregator {
             Map.entry("gpt-5.1-codex", DEFAULT_PRICING),
             Map.entry("gpt-5.2-codex", new Pricing(1.75, 14.0, 0.175)),
             Map.entry("gpt-5.4", new Pricing(2.5, 15.0, 0.25)),
-            Map.entry("gpt-5.4-mini", new Pricing(0.75, 4.5, 0.075))
+            Map.entry("gpt-5.4-mini", new Pricing(0.75, 4.5, 0.075)),
+            Map.entry("gpt-5.6-sol", new Pricing(5.0, 30.0, 0.5)),
+            Map.entry("gpt-5.6-terra", new Pricing(2.5, 15.0, 0.25)),
+            Map.entry("gpt-5.6-luna", new Pricing(1.0, 6.0, 0.1))
     );
     private static final Map<String, String> MODEL_ALIASES = Map.of(
             "gpt-5-codex", "gpt-5",
-            "gpt-5.3-codex", "gpt-5.2-codex"
+            "gpt-5.3-codex", "gpt-5.2-codex",
+            "gpt-5.6", "gpt-5.6-sol"
     );
     private static final List<String> MODEL_PREFIXES = List.of(
+            "gpt-5.6-terra",
+            "gpt-5.6-sol",
+            "gpt-5.6-luna",
+            "gpt-5.6",
             "gpt-5.4-mini",
             "gpt-5.4",
             "gpt-5.3-codex",

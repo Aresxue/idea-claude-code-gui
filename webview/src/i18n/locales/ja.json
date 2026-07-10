@@ -1434,9 +1434,17 @@
       }
     },
     "codex": {
-      "gpt53codex": {
-        "label": "GPT-5.3-Codex",
-        "description": "最新の最先端エージェントコーディングモデル（機能強化版）"
+      "gpt56sol": {
+        "label": "GPT-5.6 Sol",
+        "description": "複雑なプロフェッショナル業務向けのフロンティアモデル"
+      },
+      "gpt56terra": {
+        "label": "GPT-5.6 Terra",
+        "description": "知能とコストのバランスに優れた GPT-5.6 モデル"
+      },
+      "gpt56luna": {
+        "label": "GPT-5.6 Luna",
+        "description": "コスト重視のワークロードに最適化された GPT-5.6 モデル"
       },
       "gpt55": {
         "label": "GPT-5.5",
@@ -1445,30 +1453,6 @@
       "gpt54": {
         "label": "GPT-5.4",
         "description": "拡張された能力を備えた最新の最先端モデル"
-      },
-      "gpt52codex": {
-        "label": "GPT-5.2-Codex",
-        "description": "最先端のエージェントコーディングモデル"
-      },
-      "gpt51codexMax": {
-        "label": "GPT-5.1-Codex-Max",
-        "description": "Codex最適化のフラッグシップ、深い推論と高速処理を両立"
-      },
-      "gpt54mini": {
-        "label": "GPT-5.4-Mini",
-        "description": "より軽量な最先端エージェントコーディングモデル"
-      },
-      "gpt53codexSpark": {
-        "label": "GPT-5.3-Codex-Spark",
-        "description": "超高速コーディングモデル"
-      },
-      "gpt52": {
-        "label": "GPT-5.2",
-        "description": "プロ向け作業と長時間エージェント向けに最適化"
-      },
-      "gpt51codexMini": {
-        "label": "GPT-5.1-Codex-Mini",
-        "description": "Codex用に最適化。より安価で高速ですが、性能は低下"
       }
     }
   },

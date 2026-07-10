@@ -1428,9 +1428,17 @@
       "tooltipDisabled": "Haiku के लिए 1M संदर्भ उपलब्ध नहीं है"
     },
     "codex": {
-      "gpt53codex": {
-        "label": "GPT-5.3-Codex",
-        "description": "नवीनतम फ्रंटियर एजेंटिक कोडिंग मॉडल, उन्नत क्षमताओं के साथ।"
+      "gpt56sol": {
+        "label": "GPT-5.6 Sol",
+        "description": "जटिल पेशेवर कार्यों के लिए फ्रंटियर मॉडल।"
+      },
+      "gpt56terra": {
+        "label": "GPT-5.6 Terra",
+        "description": "बुद्धिमत्ता और लागत में संतुलन वाला GPT-5.6 मॉडल।"
+      },
+      "gpt56luna": {
+        "label": "GPT-5.6 Luna",
+        "description": "लागत-संवेदनशील वर्कलोड के लिए अनुकूलित GPT-5.6 मॉडल।"
       },
       "gpt55": {
         "label": "GPT-5.5",
@@ -1439,30 +1447,6 @@
       "gpt54": {
         "label": "GPT-5.4",
         "description": "उन्नत क्षमताओं के साथ नवीनतम फ्रंटियर मॉडल।"
-      },
-      "gpt52codex": {
-        "label": "GPT-5.2-Codex",
-        "description": "फ्रंटियर एजेंटिक कोडिंग मॉडल।"
-      },
-      "gpt51codexMax": {
-        "label": "GPT-5.1-Codex-Max",
-        "description": "Codex के लिए अनुकूलित फ्लैगशिप मॉडल, गहरी और तेज़ रीज़निंग।"
-      },
-      "gpt54mini": {
-        "label": "GPT-5.4-Mini",
-        "description": "हल्का फ्रंटियर एजेंटिक कोडिंग मॉडल।"
-      },
-      "gpt53codexSpark": {
-        "label": "GPT-5.3-Codex-Spark",
-        "description": "अत्यंत तेज़ कोडिंग मॉडल।"
-      },
-      "gpt52": {
-        "label": "GPT-5.2",
-        "description": "पेशेवर काम और लंबे समय तक चलने वाले एजेंटों के लिए अनुकूलित।"
-      },
-      "gpt51codexMini": {
-        "label": "GPT-5.1-Codex-Mini",
-        "description": "Codex के लिए अनुकूलित। सस्ता और तेज़, लेकिन कम सक्षम।"
       }
     }
   },

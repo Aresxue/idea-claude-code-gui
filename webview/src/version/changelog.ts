@@ -13,6 +13,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: '0.4.7-fix1',
+    date: '2026-07-09',
+    content: {
+      en: `✨ Features
+- Add the **GPT-5.6 model family** (Sol / Terra / Luna) as built-in Codex models: 1.05M context windows, usage pricing for cost estimation, \`gpt-5.6\` prefix/alias matching resolving to Sol, and localized labels and descriptions across all 10 languages (by @zkpaiminmin)
+
+🔧 Improvements
+- Trim the built-in Codex model dropdown to the current lineup — GPT-5.6 Sol / Terra / Luna, GPT-5.5 and GPT-5.4 — removing the retired \`gpt-5.2-codex\`, \`gpt-5.1-codex-max\`, \`gpt-5.4-mini\`, \`gpt-5.3-codex\`, \`gpt-5.3-codex-spark\`, \`gpt-5.2\` and \`gpt-5.1-codex-mini\` entries (by @zkpaiminmin)`,
+      zh: `✨ 新功能
+- 新增 **GPT-5.6 系列模型**（Sol / Terra / Luna）为 Codex 内置模型：1.05M 上下文窗口、用于费用估算的用量计价、\`gpt-5.6\` 前缀/别名匹配解析到 Sol，以及覆盖全部 10 种语言的本地化标签与描述（by @zkpaiminmin）
+
+🔧 优化
+- Codex 内置模型下拉列表精简为当前阵容——GPT-5.6 Sol / Terra / Luna、GPT-5.5 与 GPT-5.4，移除已下线的 \`gpt-5.2-codex\`、\`gpt-5.1-codex-max\`、\`gpt-5.4-mini\`、\`gpt-5.3-codex\`、\`gpt-5.3-codex-spark\`、\`gpt-5.2\` 和 \`gpt-5.1-codex-mini\`（by @zkpaiminmin）`,
+    },
+  },
+  {
     version: '0.4.7',
     date: '2026-07-09',
     content: {

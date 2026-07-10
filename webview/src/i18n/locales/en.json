@@ -1667,9 +1667,17 @@
       }
     },
     "codex": {
-      "gpt53codex": {
-        "label": "GPT-5.3-Codex",
-        "description": "Latest frontier agentic coding model with enhanced capabilities."
+      "gpt56sol": {
+        "label": "GPT-5.6 Sol",
+        "description": "Frontier model for complex professional work."
+      },
+      "gpt56terra": {
+        "label": "GPT-5.6 Terra",
+        "description": "GPT-5.6 model that balances intelligence and cost."
+      },
+      "gpt56luna": {
+        "label": "GPT-5.6 Luna",
+        "description": "GPT-5.6 model optimized for cost-sensitive workloads."
       },
       "gpt55": {
         "label": "GPT-5.5",
@@ -1678,30 +1686,6 @@
       "gpt54": {
         "label": "GPT-5.4",
         "description": "Latest frontier model with enhanced capabilities."
-      },
-      "gpt52codex": {
-        "label": "GPT-5.2-Codex",
-        "description": "Frontier agentic coding model."
-      },
-      "gpt51codexMax": {
-        "label": "GPT-5.1-Codex-Max",
-        "description": "Codex-optimized flagship for deep and fast reasoning."
-      },
-      "gpt54mini": {
-        "label": "GPT-5.4-Mini",
-        "description": "Smaller frontier agentic coding model."
-      },
-      "gpt53codexSpark": {
-        "label": "GPT-5.3-Codex-Spark",
-        "description": "Ultra-fast coding model."
-      },
-      "gpt52": {
-        "label": "GPT-5.2",
-        "description": "Optimized for professional work and long-running agents."
-      },
-      "gpt51codexMini": {
-        "label": "GPT-5.1-Codex-Mini",
-        "description": "Optimized for Codex. Cheaper, faster, but less capable."
       }
     }
   },
