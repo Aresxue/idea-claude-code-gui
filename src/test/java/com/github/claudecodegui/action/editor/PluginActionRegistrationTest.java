@@ -58,6 +58,26 @@ public class PluginActionRegistrationTest {
         Assert.assertEquals("com.github.claudecodegui.action.CreateFromTemplateAction", createFromTemplateAction.actionClass);
     }
 
+    @Test
+    public void pluginDeclaresJcefAndUsesStableTemplateActionIcon() throws Exception {
+        Document document = DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .parse(new File("src/main/resources/META-INF/plugin.xml"));
+
+        NodeList dependencies = document.getElementsByTagName("depends");
+        boolean hasJcefDependency = false;
+        for (int i = 0; i < dependencies.getLength(); i++) {
+            if ("com.intellij.modules.jcef".equals(dependencies.item(i).getTextContent().trim())) {
+                hasJcefDependency = true;
+                break;
+            }
+        }
+        Assert.assertTrue("JCEF must be available before loading JBCefBrowser classes", hasJcefDependency);
+
+        ActionRegistration saveAsTemplateAction = getActionRegistration("ClaudeCodeGUI.SaveAsTemplateAction");
+        Assert.assertEquals("/icons/cc-gui-icon.svg", saveAsTemplateAction.icon);
+    }
+
     private static Set<String> getActionGroupIds(String actionId) throws Exception {
         return getActionRegistration(actionId).getGroupIds();
     }
