@@ -1108,8 +1108,12 @@
     "quoteSuccess": "¡Citado!"
   },
   "contextMenu": {
+    "cut": "Cortar",
     "copy": "Copiar",
-    "quote": "Citar"
+    "paste": "Pegar",
+    "newline": "Insertar salto de línea",
+    "quote": "Citar",
+    "copyLink": "Copiar la dirección del enlace"
   },
   "usage": {
     "checkingLabel": "Comprobando tokentracker-cli…",
@@ -1580,7 +1584,9 @@
   "models": {
     "addModel": "Agregar modelo",
     "searchPlaceholder": "Buscar modelos",
+    "clearSearch": "Borrar búsqueda",
     "noModelsFound": "No se encontraron modelos",
+    "noSearchMatches": "No hay modelos que coincidan con \"{{query}}\"",
     "hiddenModelCount": "+ {{count}} modelos más. Escribe para buscar.",
     "pinned": "Fijados",
     "pin": "Fijar",
@@ -1595,6 +1601,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · Modelo recomendado por defecto"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · Última mejora de Sonnet"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -1631,6 +1641,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "Insignia de nueva generación para el uso autónomo del ordenador y tareas agénticas largas."
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "Modelo frontera GPT-6.1 para trabajo profesional complejo."
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -1909,6 +1923,11 @@
     "copied": "Copiado",
     "openDependencySettings": "Abrir Gestión de dependencias",
     "recommended": "Recomendado",
+    "codexWriterConflict": {
+      "title": "Hilo de Codex ocupado",
+      "intro": "Cuando comenzó el nuevo turno, el proceso de Codex del turno anterior seguía escribiendo en este hilo. El complemento ahora detiene automáticamente el turno anterior antes de enviar.",
+      "reason": "Espere unos segundos y reenvíe el mensaje; no es necesario crear una nueva sesión."
+    },
     "codexThreadResume": {
       "title": "El hilo de sesión ya no es válido",
       "intro": "Crear una nueva sesión resolverá este problema. El ID de hilo de la sesión actual ya no existe en el servidor de Codex.",

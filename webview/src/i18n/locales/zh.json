@@ -1551,8 +1551,12 @@
     "quoteSuccess": "已引用！"
   },
   "contextMenu": {
+    "cut": "剪切",
     "copy": "复制",
-    "quote": "引用"
+    "paste": "粘贴",
+    "newline": "插入换行",
+    "quote": "引用",
+    "copyLink": "复制链接地址"
   },
   "usage": {
     "checkingLabel": "正在检测 tokentracker-cli…",
@@ -2051,7 +2055,9 @@
   "models": {
     "addModel": "添加模型",
     "searchPlaceholder": "搜索模型",
+    "clearSearch": "清除搜索",
     "noModelsFound": "未找到模型",
+    "noSearchMatches": "没有匹配“{{query}}”的模型",
     "hiddenModelCount": "+ 还有 {{count}} 个模型。输入以搜索。",
     "pinned": "置顶",
     "pin": "置顶",
@@ -2072,6 +2078,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · 默认推荐模型"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · Sonnet 最新升级模型"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -2102,6 +2112,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "新一代旗舰模型，擅长自主电脑操作与长链路智能体任务"
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "面向复杂专业工作的 GPT-6.1 前沿模型"
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -2467,6 +2481,11 @@
     "copied": "已复制",
     "openDependencySettings": "打开依赖管理",
     "recommended": "推荐",
+    "codexWriterConflict": {
+      "title": "Codex 线程被占用",
+      "intro": "新回合启动时，上一个回合的 Codex 进程仍在写入该线程。插件现在会在发送前自动停止上一回合的进程。",
+      "reason": "请稍等几秒后重新发送该消息，无需新建会话。"
+    },
     "codexThreadResume": {
       "title": "会话线程已失效",
       "intro": "新建会话即可解决此问题。当前会话的线程 ID 在 Codex 服务端已不存在。",

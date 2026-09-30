@@ -1256,8 +1256,12 @@
     "quoteSuccess": "Citado!"
   },
   "contextMenu": {
+    "cut": "Recortar",
     "copy": "Copiar",
-    "quote": "Citar"
+    "paste": "Colar",
+    "newline": "Inserir nova linha",
+    "quote": "Citar",
+    "copyLink": "Copiar endereço do link"
   },
   "usage": {
     "checkingLabel": "Verificando tokentracker-cli…",
@@ -1730,7 +1734,9 @@
   "models": {
     "addModel": "Adicionar Modelo",
     "searchPlaceholder": "Pesquisar modelos",
+    "clearSearch": "Limpar pesquisa",
     "noModelsFound": "Nenhum modelo encontrado",
+    "noSearchMatches": "Nenhum modelo corresponde a \"{{query}}\"",
     "hiddenModelCount": "+ {{count}} modelos adicionais. Digite para pesquisar.",
     "pinned": "Fixados",
     "pin": "Fixar",
@@ -1745,6 +1751,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · Usar o modelo padrão"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · Upgrade mais recente do Sonnet"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -1781,6 +1791,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "Flagship de nova geração para uso autônomo do computador e tarefas agênticas longas."
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "Modelo de fronteira GPT-6.1 para trabalho profissional complexo."
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -2053,6 +2067,11 @@
     "copied": "Copiado",
     "openDependencySettings": "Abrir Gerenciamento de Dependências",
     "recommended": "Recomendado",
+    "codexWriterConflict": {
+      "title": "Thread do Codex ocupada",
+      "intro": "Quando o novo turno começou, o processo Codex do turno anterior ainda estava gravando nesta thread. O plugin agora interrompe automaticamente o turno anterior antes de enviar.",
+      "reason": "Aguarde alguns segundos e reenvie a mensagem — não é necessário criar uma nova sessão."
+    },
     "codexThreadResume": {
       "title": "O thread da sessão não é mais válido",
       "intro": "Criar uma nova sessão resolverá esse problema. O ID de thread da sessão atual não existe mais no servidor Codex.",

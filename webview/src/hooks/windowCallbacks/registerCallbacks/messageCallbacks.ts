@@ -12,6 +12,7 @@ import type { ClaudeMessage, CodexHistoryPageInfo } from '../../../types';
 import type { ContextUsageData } from '../../../components/ContextUsageDialog';
 import { sendBridgeEvent } from '../../../utils/bridge';
 import { debugError } from '../../../utils/debug';
+import { clearPendingStreamStart, isPendingStreamStartActive } from '../../../utils/streamLifecycle';
 import {
   appendOptimisticMessageIfMissing,
   ensureStreamingAssistantInList,
@@ -590,6 +591,16 @@ export function registerMessageCallbacks(
       window.__lastStreamActivityAt = Date.now();
     }
 
+    // A snapshot carrying an ERROR message is a genuine turn failure. Its
+    // follow-up showLoading(false) must reset the loading state, so retire the
+    // pending-stream-start marker here — Java pushes the error snapshot BEFORE
+    // the state-change notification, so the guard is released in time. Late
+    // interrupt-echo snapshots never contain ERROR messages, keeping the
+    // suppression intact for them.
+    if (json.includes('"type":"ERROR"') || json.includes('"type":"error"')) {
+      clearPendingStreamStart();
+    }
+
     // During streaming, coalesce rapid updateMessages calls into one per ~16ms
     // timer. The backend coalescer may push every 50ms; JSON.parse of large
     // payloads (100KB+ for long conversations) blocks the main thread and
@@ -658,6 +669,17 @@ export function registerMessageCallbacks(
 
     // FIX: Ignore loading=false during streaming — onStreamEnd handles it uniformly.
     if (!isLoading && isStreamingRef.current) {
+      return;
+    }
+
+    // FIX: Ignore loading=false while a freshly dispatched turn is still
+    // waiting for its stream to start. After an interrupt, the backend emits
+    // late cleanup echoes (showLoading(false) via notifyStateChange and the
+    // interrupt handler) once the killed process tree is reaped; those echoes
+    // must not reset the loading state the newly dispatched turn just
+    // claimed, or the queue drain dispatches the next item while the
+    // previous send is still booting (overlapping turns on one Codex thread).
+    if (!isLoading && isPendingStreamStartActive()) {
       return;
     }
 

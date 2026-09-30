@@ -27,9 +27,11 @@ import java.util.Map;
 import java.util.Set;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Codex SDK bridge.
@@ -67,6 +69,11 @@ public class CodexSDKBridge extends BaseSDKBridge {
     private final CodexHistoryReader historyReader;
     private final Path imageStorageDir;
     private final CodemossSettingsService settingsService = new CodemossSettingsService();
+    /**
+     * Per-channel send mutex. Keyed by channelId (one per GUI session, reused
+     * across turns); entries are bounded by the number of open sessions.
+     */
+    private final Map<String, ReentrantLock> channelSendLocks = new ConcurrentHashMap<>();
 
     private static final Set<String> PROTECTED_ENV_KEYS = new HashSet<>();
     static {
@@ -563,8 +570,28 @@ public class CodexSDKBridge extends BaseSDKBridge {
                 AtomicLong lastOutputAt = new AtomicLong(System.currentTimeMillis());
                 AtomicReference<String> timeoutReason = new AtomicReference<>(null);
                 try {
-                    process = pb.start();
-                    processManager.registerProcess(channelId, process);
+                    // Serialize turns per channel. Codex holds a persistent
+                    // thread-writer lock (OS file lock under ~/.codex/thread-writer-locks)
+                    // for the whole turn, so a second `codex exec resume` on the same
+                    // thread while the previous writer is still alive fails with
+                    // "thread-store conflict: already has an active writer". Rapid
+                    // Stop/Send cycling used to overlap writers because interrupt only
+                    // kills the process snapshot captured when it started. Stop any
+                    // still-alive previous turn and wait for its death before spawning.
+                    ReentrantLock channelLock = channelSendLocks.computeIfAbsent(channelId, k -> new ReentrantLock());
+                    channelLock.lock();
+                    try {
+                        Process previous = processManager.getProcess(channelId);
+                        if (previous != null && previous.isAlive()) {
+                            LOG.warn("[Codex] Previous turn process still active for channel " + channelId
+                                    + "; stopping it before starting the new turn");
+                            processManager.interruptChannel(channelId);
+                        }
+                        process = pb.start();
+                        processManager.registerProcess(channelId, process);
+                    } finally {
+                        channelLock.unlock();
+                    }
 
                     final Process watchedProcess = process;
                     watchdog = new Thread(() -> {

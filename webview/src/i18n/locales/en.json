@@ -1546,8 +1546,12 @@
     "quoteSuccess": "Quoted!"
   },
   "contextMenu": {
+    "cut": "Cut",
     "copy": "Copy",
-    "quote": "Quote"
+    "paste": "Paste",
+    "newline": "Insert Newline",
+    "quote": "Quote",
+    "copyLink": "Copy Link Address"
   },
   "usage": {
     "checkingLabel": "Checking for tokentracker-cli…",
@@ -2046,7 +2050,9 @@
   "models": {
     "addModel": "Add Model",
     "searchPlaceholder": "Search models",
+    "clearSearch": "Clear search",
     "noModelsFound": "No models found",
+    "noSearchMatches": "No models match \"{{query}}\"",
     "hiddenModelCount": "+ {{count}} more models. Type to search.",
     "pinned": "Pinned",
     "pin": "Pin",
@@ -2067,6 +2073,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · Use the default model"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · Latest Sonnet upgrade"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -2097,6 +2107,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "New-generation flagship for autonomous computer use and long agentic tasks."
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "GPT-6.1 frontier model for complex professional work."
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -2461,6 +2475,11 @@
     "copied": "Copied",
     "openDependencySettings": "Open Dependency Settings",
     "recommended": "Recommended",
+    "codexWriterConflict": {
+      "title": "Codex thread is busy",
+      "intro": "When the new turn started, the previous turn's Codex process was still writing to this thread. The plugin now stops the previous turn automatically before sending.",
+      "reason": "Wait a few seconds and resend the message — there is no need to create a new session."
+    },
     "codexThreadResume": {
       "title": "Session thread is no longer valid",
       "intro": "Creating a new session will resolve this issue. The thread ID for the current session no longer exists on the Codex server.",

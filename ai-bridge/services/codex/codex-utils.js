@@ -257,9 +257,25 @@ export function buildErrorPayload(error) {
                          rawError.includes('network') ||
                          rawError.includes('fetch failed');
 
+  // Codex holds a persistent per-thread writer lock while a turn runs. This
+  // error means another live Codex process was still writing the thread when
+  // this turn tried to resume it — a local process overlap, NOT an expired
+  // server-side thread. It must not be reported as "create a new session".
+  const isThreadWriterConflict = rawError.includes('already has an active writer');
+
   let userMessage;
 
-  if (isAuthError) {
+  if (isThreadWriterConflict) {
+    userMessage = [
+      'Codex thread is busy:',
+      `- Error message: ${rawError}`,
+      '',
+      'Another Codex process was still writing this thread when this turn started.',
+      'The plugin now stops the previous turn automatically before sending.',
+      'Please wait a few seconds and resend this message.',
+      'You do NOT need to create a new session.'
+    ].join('\n');
+  } else if (isAuthError) {
     userMessage = [
       'Codex authentication error:',
       `- Error message: ${rawError}`,
@@ -297,7 +313,8 @@ export function buildErrorPayload(error) {
       rawError,
       errorName,
       isAuthError,
-      isNetworkError
+      isNetworkError,
+      isThreadWriterConflict
     }
   };
 }

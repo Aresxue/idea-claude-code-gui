@@ -11,6 +11,7 @@ import { startTransition } from 'react';
 import type { UseWindowCallbacksOptions } from '../../useWindowCallbacks';
 import type { ClaudeMessage, ClaudeRawMessage } from '../../../types';
 import { sendBridgeEvent } from '../../../utils/bridge';
+import { clearPendingStreamStart, isPendingStreamStartActive } from '../../../utils/streamLifecycle';
 import { THROTTLE_INTERVAL } from '../../useStreamingMessages';
 import { parseSequence } from '../parseSequence';
 import { getStreamEndHandlingMode, getRawUuid, mergeRawBlocksForFinalization } from '../messageSync';
@@ -249,6 +250,9 @@ export function registerStreamingCallbacks(options: UseWindowCallbacksOptions): 
 
   window.onStreamStart = (mode?: string | boolean) => {
     if (window.__sessionTransitioning) return;
+    // The dispatched turn now owns the loading state — late cleanup echoes
+    // from a previously interrupted turn must no longer be suppressed.
+    clearPendingStreamStart();
     const isReplayStart = mode === 'replay' || mode === true;
     // Clear any stale pending updateMessages from previous turn.
     // This prevents onStreamEnd from using outdated snapshot data.
@@ -493,6 +497,14 @@ export function registerStreamingCallbacks(options: UseWindowCallbacksOptions): 
       return;
     }
 
+    // A dispatched turn that has not streamed yet owns the loading state; an
+    // onStreamEnd arriving within that window belongs to an older (e.g.
+    // interrupted) turn — its loading reset would tear the new turn's state
+    // down and re-arm the message-queue drain mid-boot (repeat sends).
+    // Finalize the old turn's bubble below, but keep the marker and the
+    // loading state; the dispatched turn's own stream end will reset both.
+    const suppressLoadingReset = isPendingStreamStartActive();
+
     clearStallWatchdog();
     const parsedSequence = parseSequence(sequence);
     // Only update minAcceptedUpdateSequence for valid positive sequences.
@@ -508,6 +520,13 @@ export function registerStreamingCallbacks(options: UseWindowCallbacksOptions): 
       if (typeof window.__cancelPendingUpdateMessages === 'function') {
         window.__cancelPendingUpdateMessages();
       }
+      if (suppressLoadingReset) {
+        window.__streamEndProcessedTurnId = currentTurnId > 0 ? currentTurnId : undefined;
+        return;
+      }
+      // This branch resets the loading state, so the pending-stream-start
+      // marker has served its purpose.
+      clearPendingStreamStart();
       setStreamingActive(false);
       setLoading(false);
       setLoadingStartTime(null);
@@ -862,9 +881,15 @@ export function registerStreamingCallbacks(options: UseWindowCallbacksOptions): 
     // arrives before onStreamEnd and gets ignored by the isStreamingRef guard,
     // while the flush callback's showLoading("false") may be delayed or lost
     // (e.g., due to slow message serialization or multi-hop async chains).
-    setLoading(false);
-    setLoadingStartTime(null);
-    setIsThinking(false);
+    // Suppressed while a freshly dispatched turn awaits its stream start: the
+    // onStreamEnd then belongs to an older turn, whose bubble was finalized
+    // above but whose loading reset must not claim the new turn's state.
+    if (!suppressLoadingReset) {
+      clearPendingStreamStart();
+      setLoading(false);
+      setLoadingStartTime(null);
+      setIsThinking(false);
+    }
 
     // Mark this turn as processed — idempotency guard for dual-path delivery
     window.__streamEndProcessedTurnId = endedStreamingTurnId;

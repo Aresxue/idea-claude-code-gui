@@ -1108,8 +1108,12 @@
     "quoteSuccess": "उद्धृत किया गया!"
   },
   "contextMenu": {
+    "cut": "काटें",
     "copy": "कॉपी करें",
-    "quote": "उद्धृत करें"
+    "paste": "पेस्ट करें",
+    "newline": "नई लाइन डालें",
+    "quote": "उद्धृत करें",
+    "copyLink": "लिंक पता कॉपी करें"
   },
   "usage": {
     "checkingLabel": "tokentracker-cli की जाँच हो रही है…",
@@ -1579,7 +1583,9 @@
   "models": {
     "addModel": "मॉडल जोड़ें",
     "searchPlaceholder": "मॉडल खोजें",
+    "clearSearch": "सर्च साफ़ करें",
     "noModelsFound": "कोई मॉडल नहीं मिला",
+    "noSearchMatches": "\"{{query}}\" से मेल खाता कोई मॉडल नहीं मिला",
     "hiddenModelCount": "+ {{count}} और मॉडल. खोजने के लिए टाइप करें.",
     "pinned": "पिन किए गए",
     "pin": "पिन करें",
@@ -1594,6 +1600,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · डिफ़ॉल्ट अनुशंसित मॉडल"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · नवीनतम Sonnet अपग्रेड"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -1630,6 +1640,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "स्वायत्त कंप्यूटर उपयोग और लंबे एजेंटिक कार्यों के लिए नई पीढ़ी का फ्लैगशिप मॉडल।"
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "जटिल पेशेवर कार्यों के लिए GPT-6.1 फ्रंटियर मॉडल।"
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -1902,6 +1916,11 @@
     "copied": "कॉपी किया गया",
     "openDependencySettings": "निर्भरता प्रबंधन खोलें",
     "recommended": "अनुशंसित",
+    "codexWriterConflict": {
+      "title": "Codex थ्रेड व्यस्त है",
+      "intro": "जब नया टर्न शुरू हुआ, पिछले टर्न की Codex प्रक्रिया अभी इस थ्रेड में लिख रही थी। प्लगइन अब भेजने से पहले पिछले टर्न को स्वतः रोक देता है।",
+      "reason": "कुछ सेकंड प्रतीक्षा करें और संदेश दोबारा भेजें — नया सेशन बनाने की आवश्यकता नहीं है।"
+    },
     "codexThreadResume": {
       "title": "सत्र थ्रेड अब मान्य नहीं है",
       "intro": "नया सत्र बनाने से यह समस्या हल हो जाएगी। वर्तमान सत्र का थ्रेड ID Codex सर्वर पर अब मौजूद नहीं है।",

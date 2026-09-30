@@ -13,6 +13,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: '0.5.9',
+    date: '2026-09-30',
+    content: {
+      en: `✨ Features
+- **Search the model dropdown with multiple terms, navigate it from the keyboard and clear the query**: whitespace-separated tokens are AND-matched against the model id, label and description, so \`son 4\` finds Sonnet 4.6; \`ArrowUp\`/\`ArrowDown\` walk the rendered rows with wrap-around, \`Enter\` picks the highlighted row and \`Esc\` clears the query first and only closes the menu on a second press, while IME composition keys are never hijacked; searching pre-highlights the first hit, scrolls rows into view, a clear (\`x\`) button in the search row keeps the dropdown open, and the empty state echoes the query (by @57ggfk)
+- **Copy a link's address from the message list and see where a link actually points**: right-clicking a link opens the context menu with "Copy Link Address" even when no text is selected — Quote/Copy appear only for a real selection, and the link action comes first, matching browser convention — while Markdown URL links whose visible text hides their target (\`data-linkify="url"\`) now reveal the raw \`href\` in the hover tooltip, resolved synchronously without a backend round-trip; file links keep their async resolution path, and a single link-type predicate is shared by mouseover/mousemove/mouseout so they always agree on which anchors own the tooltip (by @gadfly3173)
+- **Add Claude Sonnet 5.5 and GPT-6.1 Sol**: both models are selectable in the dropdown with localized labels and descriptions in all 10 locales, and are wired into the effort and max-effort sets; their context limits (200k / 1M for Sonnet 5.5, 1.05M for GPT-6.1 Sol) and pricing entries are registered ahead of the shorter \`claude-sonnet-5\` / \`gpt-6\` prefixes, so dated snapshots such as \`claude-sonnet-5-5-2026-04-01\` and \`gpt-6.1-sol-2026-04-01\` resolve to the intended rates instead of a stale alias (by @zhukunpenglinyutong)
+
+🐛 Fixes
+- **Stop Codex turns from overlapping and queued messages from resending after an interrupt**: Codex holds a persistent per-thread writer lock for the whole turn, so a second \`codex exec resume\` started while the previous process was still alive failed with "thread-store conflict: already has an active writer", which the UI misdiagnosed as an expired session thread and answered with "create a new session"; sends are now serialized per channel and a still-alive previous turn is stopped before the next one spawns, the message queue dispatches at most one item per idle period, and a freshly dispatched turn's loading state survives the just-interrupted turn's late \`showLoading(false)\` / \`onStreamEnd\` echoes (an 8-second immunity window, released by the turn's real stream start or by an error snapshot) so the drain cannot re-fire mid-boot; "already has an active writer" also gets its own diagnostic with retry guidance in 10 locales instead of the wrong advice (by @57ggfk)
+- **Translate the input box's right-click menu in every locale**: \`contextMenu.cut\` / \`paste\` / \`newline\` existed in no locale including \`en\`, so Cut / Paste / Insert Newline always fell back to hardcoded English and produced a mixed-language menu in non-English UIs; the three keys are now present in all 10 webview locales, ordered cut → copy → paste → newline → quote (by @57ggfk)`,
+      zh: `✨ 新功能
+- **模型下拉支持多词搜索、键盘操作与一键清空**：以空格分隔的多个关键词按「且」的关系同时匹配模型 ID、名称与描述，因此输入 \`son 4\` 能找到 Sonnet 4.6；\`ArrowUp\`/\`ArrowDown\` 在可见行之间循环移动高亮，\`Enter\` 选中高亮行，\`Esc\` 先清空搜索词、再按一次才关闭菜单，且不会劫持输入法候选键；搜索时会预高亮首个命中项并把行滚动到可视区，搜索行新增清除（\`x\`）按钮（保持菜单展开），空结果状态会回显用户输入的搜索词（by @57ggfk）
+- **消息列表里可右键复制链接地址，并能看到链接的真实指向**：即使没有选中任何文本，右键点击链接也会弹出包含「复制链接地址」的菜单——引用/复制仅在确有选中文本时出现，且链接操作排在前面（符合浏览器习惯）；Markdown 中「显示文字掩盖了真实地址」的链接（\`data-linkify="url"\`）现在会在悬停浮层里显示原始 \`href\`（同步解析，无需请求后端），文件链接仍走异步解析路径；链接类型判断被抽成单一判定函数，保证 mouseover/mousemove/mouseout 对「哪个链接该显示浮层」的认知一致（by @gadfly3173）
+- **新增 Claude Sonnet 5.5 与 GPT-6.1 Sol**：两款模型可在下拉中选择，10 个语言包都补上了本地化的名称与描述，并接入了推理强度与最高强度集合；上下文上限（Sonnet 5.5 为 200k / 1M，GPT-6.1 Sol 为 1.05M）与价格表也在更短的 \`claude-sonnet-5\` / \`gpt-6\` 前缀之前注册，使 \`claude-sonnet-5-5-2026-04-01\`、\`gpt-6.1-sol-2026-04-01\` 这类带日期的快照按预期计费，而不会命中旧的别名（by @zhukunpenglinyutong）
+
+🐛 修复
+- **Codex 不再出现回合重叠、中断后排队消息被重复发送**：Codex 在整个回合期间持有「按线程持久化的写锁」，因此在上一个进程仍存活时再启动一次 \`codex exec resume\`，会以 "thread-store conflict: already has an active writer" 失败，而界面把它误判为「会话线程已过期」并建议「新建会话」；现在按 channel 串行化发送、在下一回合启动前先停掉仍存活的上一回合进程，消息队列每个空闲期最多派发一条，并且新派发回合的 loading 状态不会再被上一回合迟到的 \`showLoading(false)\` / \`onStreamEnd\` 回声重置（8 秒免疫窗口，回合真正开始流式输出或收到错误快照时解除），从而不会在启动过程中再次触发排队派发；"already has an active writer" 也拥有了独立诊断（含重试指引，覆盖 10 个语言包），不再给出错误建议（by @57ggfk）
+- **输入框右键菜单在所有语言下完成翻译**：\`contextMenu.cut\` / \`paste\` / \`newline\` 在所有语言包（包括 \`en\`）中都不存在，导致剪切/粘贴/插入换行始终回落到硬编码英文，非英文界面出现中英混排菜单；现已在 10 个 webview 语言包中全部补齐（顺序为 cut → copy → paste → newline → quote）（by @57ggfk）`,
+    },
+  },
+  {
     version: '0.5.8',
     date: '2026-09-28',
     content: {

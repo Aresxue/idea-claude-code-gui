@@ -177,4 +177,51 @@ describe('useMessageQueue', () => {
 
     expect(result.current.queueApi.queue.map(m => m.content)).toEqual(['third', 'first', 'second']);
   });
+
+  it('dispatches at most one message per idle period until loading flips', () => {
+    const onExecute = vi.fn();
+    const hook = renderHook(() => useMessageQueue({ isLoading: false, onExecute }));
+
+    act(() => {
+      hook.result.current.enqueue('first');
+      hook.result.current.enqueue('second');
+    });
+
+    // The synchronous re-render after the first dispatch must not drain
+    // 'second' too — overlapping sends on one Codex thread hit the
+    // thread-writer lock conflict.
+    expect(onExecute).toHaveBeenCalledTimes(1);
+    expect(onExecute).toHaveBeenCalledWith('first', undefined);
+    expect(hook.result.current.queue.map(m => m.content)).toEqual(['second']);
+  });
+
+  it('reopens the single-flight gate through a loading cycle', () => {
+    const onExecute = vi.fn();
+    const hook = renderHook(() => {
+      const [loading, setLoading] = useState(false);
+      const queueApi = useMessageQueue({ isLoading: loading, onExecute });
+      return { queueApi, setLoading };
+    });
+
+    act(() => {
+      hook.result.current.queueApi.enqueue('only');
+    });
+    // Dispatch happened (loading never flipped: the execute path bailed).
+    expect(onExecute).toHaveBeenCalledTimes(1);
+
+    // A later turn (loading true → false) reopens the gate.
+    act(() => {
+      hook.result.current.setLoading(true);
+    });
+    act(() => {
+      hook.result.current.setLoading(false);
+    });
+    expect(onExecute).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      hook.result.current.queueApi.enqueue('next round');
+    });
+    expect(onExecute).toHaveBeenCalledTimes(2);
+    expect(onExecute).toHaveBeenLastCalledWith('next round', undefined);
+  });
 });

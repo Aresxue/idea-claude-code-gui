@@ -1137,8 +1137,12 @@
     "quoteSuccess": "已引用！"
   },
   "contextMenu": {
+    "cut": "剪下",
     "copy": "複製",
-    "quote": "引用"
+    "paste": "貼上",
+    "newline": "插入換行",
+    "quote": "引用",
+    "copyLink": "複製連結位址"
   },
   "usage": {
     "checkingLabel": "正在偵測 tokentracker-cli…",
@@ -1609,7 +1613,9 @@
   "models": {
     "addModel": "新增模型",
     "searchPlaceholder": "搜尋模型",
+    "clearSearch": "清除搜尋",
     "noModelsFound": "找不到模型",
+    "noSearchMatches": "沒有符合「{{query}}」的模型",
     "hiddenModelCount": "+ 還有 {{count}} 個模型。輸入以搜尋。",
     "pinned": "置頂",
     "pin": "置頂",
@@ -1624,6 +1630,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · 預設推薦模型"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · Sonnet 最新升級模型"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -1660,6 +1670,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "新一代旗艦模型，擅長自主電腦操作與長鏈路智慧體任務"
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "面向複雜專業工作的 GPT-6.1 前沿模型"
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -1979,6 +1993,11 @@
     "copied": "已複製",
     "openDependencySettings": "開啟相依性管理",
     "recommended": "推薦",
+    "codexWriterConflict": {
+      "title": "Codex 執行緒被佔用",
+      "intro": "新回合啟動時，上一個回合的 Codex 程序仍在寫入該執行緒。外掛現在會在傳送前自動停止上一回合的程序。",
+      "reason": "請稍等幾秒後重新傳送該訊息，無需新建會話。"
+    },
     "codexThreadResume": {
       "title": "工作階段執行緒已失效",
       "intro": "新建工作階段即可解決此問題。目前工作階段的執行緒 ID 在 Codex 伺服器端已不存在。",

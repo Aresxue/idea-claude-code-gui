@@ -1202,8 +1202,12 @@
     "quoteSuccess": "인용됨!"
   },
   "contextMenu": {
+    "cut": "잘라내기",
     "copy": "복사",
-    "quote": "인용"
+    "paste": "붙여넣기",
+    "newline": "줄바꿈 삽입",
+    "quote": "인용",
+    "copyLink": "링크 주소 복사"
   },
   "usage": {
     "checkingLabel": "tokentracker-cli 확인 중…",
@@ -1675,7 +1679,9 @@
   "models": {
     "addModel": "모델 추가",
     "searchPlaceholder": "모델 검색",
+    "clearSearch": "검색 지우기",
     "noModelsFound": "모델을 찾을 수 없습니다",
+    "noSearchMatches": "\"{{query}}\"와 일치하는 모델이 없습니다",
     "hiddenModelCount": "+ {{count}}개 모델 더 있음. 입력하여 검색하세요.",
     "pinned": "고정",
     "pin": "고정",
@@ -1690,6 +1696,10 @@
       "sonnet5": {
         "label": "Sonnet 5",
         "description": "Sonnet 5 · 기본 모델 사용"
+      },
+      "sonnet55": {
+        "label": "Sonnet 5.5",
+        "description": "Sonnet 5.5 · 최신 Sonnet 업그레이드"
       },
       "opus55": {
         "label": "Opus 5.5",
@@ -1726,6 +1736,10 @@
       "gpt6astra": {
         "label": "GPT-6 Astra",
         "description": "자율 컴퓨터 조작과 장기 에이전트 작업을 위한 차세대 플래그십 모델."
+      },
+      "gpt61sol": {
+        "label": "GPT-6.1 Sol",
+        "description": "복잡한 전문 작업을 위한 GPT-6.1 프런티어 모델."
       },
       "gpt6sol": {
         "label": "GPT-6 Sol",
@@ -2004,6 +2018,11 @@
     "copied": "복사됨",
     "openDependencySettings": "종속성 관리 열기",
     "recommended": "권장",
+    "codexWriterConflict": {
+      "title": "Codex 스레드 사용 중",
+      "intro": "새 턴이 시작될 때 이전 턴의 Codex 프로세스가 아직 이 스레드에 기록 중이었습니다. 플러그인은 이제 전송 전에 이전 턴을 자동으로 중지합니다.",
+      "reason": "몇 초 후 메시지를 다시 보내세요. 새 세션을 만들 필요가 없습니다."
+    },
     "codexThreadResume": {
       "title": "세션 스레드가 더 이상 유효하지 않습니다",
       "intro": "새 세션을 만들면 이 문제가 해결됩니다. 현재 세션의 스레드 ID가 Codex 서버에 더 이상 존재하지 않습니다.",
